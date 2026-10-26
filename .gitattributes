@@ -1,0 +1,8 @@
+# Store and check out text files with LF endings on every OS, so scripts in api/bin
+# keep working in WSL, Docker and CI even when Git on Windows has core.autocrlf=true.
+* text=auto eol=lf
+
+# Windows-only scripts need CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
