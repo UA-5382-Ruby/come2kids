@@ -51,6 +51,7 @@ sudo apt update && sudo apt install -y build-essential autoconf git curl libssl-
 ```bash
 xcode-select --install
 brew install openssl@3 libyaml gmp rust postgresql@17
+export PATH="$(brew --prefix postgresql@17)/bin:$PATH"
 ```
 
 ---
@@ -129,7 +130,7 @@ To use a password-protected or Dockerized PostgreSQL, see
 MongoDB will store logs later. You don't need it yet. When you do, the simplest option is Docker:
 
 ```bash
-docker run -d --name come2kids-mongo -p 27017:27017 -v come2kids-mongo:/data/db mongo:8
+docker run -d --name come2kids-mongo -p 127.0.0.1:27017:27017 -v come2kids-mongo:/data/db mongo:8
 ```
 
 Native packages: <https://www.mongodb.com/docs/manual/administration/install-on-linux/>.

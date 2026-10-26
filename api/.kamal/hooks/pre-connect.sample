@@ -13,6 +13,9 @@
 # KAMAL_DESTINATION (if set)
 # KAMAL_RUNTIME
 
+require "benchmark"
+require "socket"
+
 hosts = ENV["KAMAL_HOSTS"].split(",")
 results = nil
 max = 3
