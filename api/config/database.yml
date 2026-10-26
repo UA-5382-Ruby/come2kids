@@ -1,0 +1,30 @@
+# PostgreSQL. Connection settings are read from environment variables
+# (see ../.env.example and ../docs/environment.md). Defaults work with a
+# local Postgres role named after your OS user over a Unix socket.
+#
+# If DATABASE_URL is set, Rails merges it on top of this file.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV["DB_HOST"] %>
+  port: <%= ENV["DB_PORT"] %>
+  username: <%= ENV["DB_USERNAME"] %>
+  password: <%= ENV["DB_PASSWORD"] %>
+
+development:
+  <<: *default
+  database: come2kids_development
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  <<: *default
+  database: come2kids_test
+
+production:
+  <<: *default
+  database: come2kids_production
+  username: <%= ENV.fetch("DB_USERNAME") { "come2kids" } %>
+  password: <%= ENV["COME2KIDS_DATABASE_PASSWORD"] %>

@@ -1,0 +1,8 @@
+# Always use LF so scripts (bin/*, shebangs) work on Linux/WSL/macOS and CI
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary

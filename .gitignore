@@ -85,6 +85,7 @@ config/master.key
 # TODO Comment out these rules if environment variables can be committed
 .env
 .env*.local
+!.env.example
 
 ## Environment normalization:
 /.bundle
@@ -133,6 +134,7 @@ yarn-debug.log*
 
 # Ignore Mac system files
 .DS_Store
+Thumbs.db
 
 #Ignore Python environment
 .venv/
@@ -174,3 +176,24 @@ dist-ssr
 *.sw?
 
 coverage/
+
+# Rails API (monorepo under api/)
+/api/log/*
+/api/tmp/*
+!/api/log/.keep
+!/api/tmp/.keep
+/api/tmp/pids/*
+!/api/tmp/pids/.keep
+/api/storage/*
+!/api/storage/.keep
+/api/config/*.key
+/api/config/master.key
+/api/.bundle/
+/api/vendor/bundle
+/api/public/assets
+/api/tmp/rubocop
+
+# Frontend placeholder (web/)
+/web/dist
+/web/build
+/web/node_modules/
