@@ -1,0 +1,33 @@
+# frozen_string_literal: true
+
+source "https://rubygems.org"
+
+# Reads the version from api/.ruby-version so everyone uses the same Ruby
+ruby file: ".ruby-version"
+
+gem "bootsnap", require: false # faster boot
+gem "pg", "~> 1.5"             # PostgreSQL
+gem "puma", ">= 5.0"           # web server
+gem "rails", "~> 8.0"
+gem "tzinfo-data", platforms: %i[windows jruby]
+
+gem "pundit"                   # policies
+gem "rack-cors"                # CORS for the future web frontend
+gem "rswag-api"                # Swagger JSON serving
+gem "rswag-ui"                 # Swagger UI
+
+group :development, :test do
+  gem "debug", platforms: %i[mri windows], require: "debug/prelude"
+  gem "factory_bot_rails"
+  gem "faker"
+  gem "rspec-rails"
+  gem "rswag-specs"            # generates Swagger docs from specs
+
+  # Code style (Part 3)
+  gem "rubocop", require: false
+  gem "rubocop-rails", require: false
+end
+
+group :test do
+  gem "shoulda-matchers"
+end
