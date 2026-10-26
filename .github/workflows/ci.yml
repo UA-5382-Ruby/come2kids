@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Required status check: mark "lint" as required in branch protection
+  # (Settings -> Branches -> main -> Require status checks) so a failing
+  # Rubocop run blocks merging.
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    env:
+      RUBOCOP_CACHE_ROOT: tmp/rubocop
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Single source of truth for the Ruby version is .tool-versions (asdf)
+      - name: Read Ruby version from .tool-versions
+        id: versions
+        working-directory: .
+        run: echo "ruby=$(awk '$1 == "ruby" {print $2}' .tool-versions)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ steps.versions.outputs.ruby }}
+          bundler-cache: true
+          working-directory: api
+
+      - name: Restore Rubocop cache
+        uses: actions/cache@v4
+        with:
+          path: api/${{ env.RUBOCOP_CACHE_ROOT }}
+          key: rubocop-${{ runner.os }}-${{ hashFiles('.tool-versions', 'api/.rubocop.yml', 'api/Gemfile.lock') }}
+          restore-keys: |
+            rubocop-${{ runner.os }}-
+
+      - name: Run Rubocop
+        run: bundle exec rubocop --format github --format progress
