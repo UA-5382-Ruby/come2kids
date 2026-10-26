@@ -1,0 +1,69 @@
+# Team code style. Run from api/: bundle exec rubocop
+# Auto-fix safe offenses:        bundle exec rubocop -a
+plugins:
+  - rubocop-rails
+  - rubocop-performance
+
+AllCops:
+  # Ruby version is read from ../.tool-versions via the Gemfile
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - "bin/**/*"
+    - "db/schema.rb"
+    - "db/migrate/**/*"
+    - "node_modules/**/*"
+    - "tmp/**/*"
+    - "vendor/**/*"
+    - "storage/**/*"
+    - "log/**/*"
+
+# --- Style -------------------------------------------------------------------
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
+
+# --- Layout ------------------------------------------------------------------
+# LF everywhere (also on Windows), matches .gitattributes
+Layout/EndOfLine:
+  EnforcedStyle: lf
+
+Layout/LineLength:
+  Max: 120
+
+# --- Metrics -----------------------------------------------------------------
+Metrics/MethodLength:
+  Max: 15
+
+Metrics/BlockLength:
+  Exclude:
+    - "config/**/*"
+    - "spec/**/*"
+    - "test/**/*"
+
+Metrics/AbcSize:
+  Max: 20
+
+# --- Rails -------------------------------------------------------------------
+Rails/UnknownEnv:
+  Environments:
+    - development
+    - test
+    - production
