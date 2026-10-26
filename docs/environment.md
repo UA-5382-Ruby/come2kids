@@ -27,8 +27,8 @@ instead of editing `database.yml`:
 export DATABASE_URL="postgres://postgres:YOUR_PASSWORD@localhost:5432/api_development"
 ```
 
-Replace `YOUR_PASSWORD` with your own password. Keep the real value out of the repository and out of
-shared shell history, for example in a git-ignored `.env.local` or your shell profile.
+Replace `YOUR_PASSWORD` with your own password. Keep the real value out of the repository: put the
+`export` line in your shell profile (`~/.bashrc` or `~/.zshrc`). The app doesn't load `.env` files.
 
 ## Production deploy (Kamal)
 
