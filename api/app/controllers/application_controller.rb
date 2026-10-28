@@ -3,4 +3,5 @@ class ApplicationController < ActionController::API
     include Paginatable
     include Sortable
     include Filterable
+    include ResponseRenderer
 end
