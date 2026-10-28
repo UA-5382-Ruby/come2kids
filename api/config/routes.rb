@@ -7,4 +7,8 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+  
+  # Error handling - Keep at the bottom
+  match "*path", to: "errors#not_found", via: :all,
+    constraints: ->(req) { !req.path.start_with?("/rails/") }
 end
