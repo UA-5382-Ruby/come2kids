@@ -55,7 +55,7 @@ class AuthController < ApplicationController
     end
 
     rotated = token.rotate!
-    return render_invalid_refresh_token if rotated.nil?
+    return render_invalid_refresh_token(clear_cookie: false) if rotated.nil?
 
     render_tokens(user, rotated.last)
   end
@@ -95,8 +95,8 @@ class AuthController < ApplicationController
     render_error("CSRF_HEADER_MISSING", "#{CSRF_HEADER} header is required", status: :forbidden)
   end
 
-  def render_invalid_refresh_token
-    delete_refresh_cookie
+  def render_invalid_refresh_token(clear_cookie: true)
+    delete_refresh_cookie if clear_cookie
     render_error("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired", status: :unauthorized)
   end
 

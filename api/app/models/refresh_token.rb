@@ -28,7 +28,9 @@ class RefreshToken < ApplicationRecord
     end
 
     def revoke_all_for(user)
-      where(user: user, revoked_at: nil).update_all(revoked_at: Time.current, updated_at: Time.current)
+      user.with_lock do
+        where(user: user, revoked_at: nil).update_all(revoked_at: Time.current, updated_at: Time.current)
+      end
     end
 
     # A random 256-bit token does not need a slow hash; SHA-256 keeps lookups indexable.
@@ -56,7 +58,7 @@ class RefreshToken < ApplicationRecord
   # Revokes this token and issues its successor. Returns [new_record, raw_token],
   # or nil when a concurrent request has already used or revoked this token.
   def rotate!
-    transaction do
+    user.with_lock do
       lock!
       next unless active?
 
