@@ -1,16 +1,15 @@
-# Be sure to restart your server when you modify this file.
+allowed_origins = lambda do
+  ENV.fetch("CORS_ALLOWED_ORIGINS", "").split(",").filter_map do |origin|
+    origin.strip.presence
+  end
+end
 
-# Avoid CORS issues when API is called from the frontend app.
-# Handle Cross-Origin Resource Sharing (CORS) in order to accept cross-origin Ajax requests.
+Rails.application.config.middleware.insert_before 0, Rack::Cors do
+  allow do
+    origins { |origin, _env| allowed_origins.call.include?(origin) }
 
-# Read more: https://github.com/cyu/rack-cors
-
-# Rails.application.config.middleware.insert_before 0, Rack::Cors do
-#   allow do
-#     origins "example.com"
-#
-#     resource "*",
-#       headers: :any,
-#       methods: [:get, :post, :put, :patch, :delete, :options, :head]
-#   end
-# end
+    resource "*",
+      headers: :any,
+      methods: [ :get, :post, :put, :patch, :delete, :options, :head ]
+  end
+end

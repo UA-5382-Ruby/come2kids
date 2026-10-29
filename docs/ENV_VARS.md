@@ -40,9 +40,22 @@ For local development, you can use a `.env` file to store environment variables:
 ```bash
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD_HERE@localhost:5432/come2kids_dev
 RAILS_ENV=development
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
 > **Important:** Ensure that `.env` is listed in `.gitignore` to prevent accidental commits of sensitive data.
+
+### CORS
+
+`CORS_ALLOWED_ORIGINS` contains the frontend origins allowed to make
+cross-origin requests to the API. Separate multiple origins with commas:
+
+```bash
+CORS_ALLOWED_ORIGINS=http://localhost:3000,https://app.example.com
+```
+
+Configure this variable in each deployment environment. Do not use `*` when
+the API accepts credentials or is accessed by a known frontend.
 
 ---
 
@@ -66,4 +79,3 @@ rails credentials:edit
 # Set the master key for production
 export RAILS_MASTER_KEY=your_master_key_here
 ```
-
