@@ -28,5 +28,8 @@ module Api
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # Refresh tokens travel in an HttpOnly cookie, so the cookie middleware is needed.
+    config.middleware.use ActionDispatch::Cookies
   end
 end
