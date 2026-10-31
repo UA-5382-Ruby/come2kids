@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_28_194750) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_31_090301) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -25,17 +25,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_194750) do
     t.index ["slug"], name: "index_categories_on_slug", unique: true
   end
 
-  create_table "email_tokens", force: :cascade do |t|
+  create_table "company_members", primary_key: ["organization_id", "user_id"], force: :cascade do |t|
+    t.bigint "organization_id", null: false
     t.bigint "user_id", null: false
-    t.string "purpose", limit: 30, null: false
-    t.string "token_hash", null: false
-    t.datetime "expires_at", null: false
-    t.datetime "used_at"
+    t.bigint "added_by_id"
+    t.datetime "added_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["token_hash"], name: "index_email_tokens_on_token_hash", unique: true
-    t.index ["user_id"], name: "index_email_tokens_on_user_id"
-    t.check_constraint "purpose::text = ANY (ARRAY['confirmation'::character varying, 'reset'::character varying]::text[])", name: "chk_email_tokens_purpose"
+    t.bigint "role_id", null: false
+    t.index ["added_by_id"], name: "index_company_members_on_added_by_id"
+    t.index ["organization_id"], name: "idx_company_members_one_owner_per_org", unique: true, where: "(role_id = 1)"
+    t.index ["role_id"], name: "index_company_members_on_role_id"
+    t.index ["user_id"], name: "idx_company_members_one_org_per_user", unique: true, where: "(role_id = 1)"
+    t.index ["user_id"], name: "index_company_members_on_user_id"
   end
 
   create_table "event_translations", force: :cascade do |t|
@@ -47,7 +49,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_194750) do
     t.datetime "updated_at", null: false
     t.index ["event_id", "locale"], name: "index_event_translations_on_event_id_and_locale", unique: true
     t.index ["event_id"], name: "index_event_translations_on_event_id"
-    t.check_constraint "locale::text = ANY (ARRAY['uk'::character varying, 'en'::character varying]::text[])", name: "chk_event_translations_locale"
+    t.check_constraint "locale::text = ANY (ARRAY['uk'::character varying::text, 'en'::character varying::text])", name: "chk_event_translations_locale"
   end
 
   create_table "events", force: :cascade do |t|
@@ -79,19 +81,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_194750) do
     t.index ["start_at"], name: "index_events_on_start_at"
     t.index ["status"], name: "index_events_on_status"
     t.check_constraint "end_at > start_at", name: "chk_events_end_after_start"
-    t.check_constraint "location_type IS NULL OR (location_type::text = ANY (ARRAY['offline'::character varying, 'online'::character varying]::text[]))", name: "chk_events_location_type"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'under_review'::character varying, 'published'::character varying, 'rejected'::character varying, 'cancelled'::character varying]::text[])", name: "chk_events_status"
-  end
-
-  create_table "organization_managers", primary_key: ["organization_id", "user_id"], force: :cascade do |t|
-    t.bigint "organization_id", null: false
-    t.bigint "user_id", null: false
-    t.bigint "added_by_id"
-    t.datetime "added_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["added_by_id"], name: "index_organization_managers_on_added_by_id"
-    t.index ["user_id"], name: "index_organization_managers_on_user_id"
+    t.check_constraint "location_type IS NULL OR (location_type::text = ANY (ARRAY['offline'::character varying::text, 'online'::character varying::text]))", name: "chk_events_location_type"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'under_review'::character varying::text, 'published'::character varying::text, 'rejected'::character varying::text, 'cancelled'::character varying::text])", name: "chk_events_status"
   end
 
   create_table "organization_translations", force: :cascade do |t|
@@ -103,11 +94,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_194750) do
     t.datetime "updated_at", null: false
     t.index ["organization_id", "locale"], name: "index_organization_translations_on_organization_id_and_locale", unique: true
     t.index ["organization_id"], name: "index_organization_translations_on_organization_id"
-    t.check_constraint "locale::text = ANY (ARRAY['uk'::character varying, 'en'::character varying]::text[])", name: "chk_org_translations_locale"
+    t.check_constraint "locale::text = ANY (ARRAY['uk'::character varying::text, 'en'::character varying::text])", name: "chk_org_translations_locale"
   end
 
   create_table "organizations", force: :cascade do |t|
-    t.bigint "owner_id", null: false
     t.citext "slug", null: false
     t.string "logo_url"
     t.citext "contact_email", null: false
@@ -127,21 +117,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_194750) do
     t.datetime "updated_at", null: false
     t.index ["approved_by_id"], name: "index_organizations_on_approved_by_id"
     t.index ["blocked_by_id"], name: "index_organizations_on_blocked_by_id"
-    t.index ["owner_id"], name: "index_organizations_on_owner_id", unique: true
     t.index ["slug"], name: "index_organizations_on_slug_active", unique: true, where: "(deleted_at IS NULL)"
     t.index ["status"], name: "index_organizations_on_status"
-    t.check_constraint "status::text = ANY (ARRAY['pending_approval'::character varying, 'approved'::character varying, 'rejected'::character varying, 'blocked'::character varying]::text[])", name: "chk_organizations_status"
+    t.check_constraint "status::text = ANY (ARRAY['pending_approval'::character varying::text, 'approved'::character varying::text, 'rejected'::character varying::text, 'blocked'::character varying::text])", name: "chk_organizations_status"
   end
 
-  create_table "refresh_tokens", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.string "token_hash", null: false
-    t.datetime "expires_at", null: false
-    t.datetime "revoked_at"
+  create_table "roles", force: :cascade do |t|
+    t.string "key", limit: 30, null: false
+    t.string "name_uk", limit: 100, null: false
+    t.string "name_en", limit: 100, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["token_hash"], name: "index_refresh_tokens_on_token_hash", unique: true
-    t.index ["user_id"], name: "index_refresh_tokens_on_user_id"
+    t.index ["key"], name: "index_roles_on_key", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -166,23 +153,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_28_194750) do
     t.datetime "updated_at", null: false
     t.index ["blocked_by_id"], name: "index_users_on_blocked_by_id"
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.check_constraint "platform_role::text = ANY (ARRAY['user'::character varying, 'moderator'::character varying]::text[])", name: "chk_users_platform_role"
-    t.check_constraint "preferred_locale::text = ANY (ARRAY['uk'::character varying, 'en'::character varying]::text[])", name: "chk_users_preferred_locale"
+    t.check_constraint "platform_role::text = ANY (ARRAY['user'::character varying::text, 'moderator'::character varying::text])", name: "chk_users_platform_role"
+    t.check_constraint "preferred_locale::text = ANY (ARRAY['uk'::character varying::text, 'en'::character varying::text])", name: "chk_users_preferred_locale"
   end
 
-  add_foreign_key "email_tokens", "users", on_delete: :cascade
+  add_foreign_key "company_members", "organizations", on_delete: :cascade
+  add_foreign_key "company_members", "roles", on_delete: :restrict
+  add_foreign_key "company_members", "users", column: "added_by_id", on_delete: :nullify
+  add_foreign_key "company_members", "users", on_delete: :cascade
   add_foreign_key "event_translations", "events", on_delete: :cascade
   add_foreign_key "events", "categories", on_delete: :restrict
   add_foreign_key "events", "organizations", on_delete: :restrict
   add_foreign_key "events", "users", column: "created_by_id", on_delete: :restrict
   add_foreign_key "events", "users", column: "reviewed_by_id", on_delete: :nullify
-  add_foreign_key "organization_managers", "organizations", on_delete: :cascade
-  add_foreign_key "organization_managers", "users", column: "added_by_id", on_delete: :nullify
-  add_foreign_key "organization_managers", "users", on_delete: :cascade
   add_foreign_key "organization_translations", "organizations", on_delete: :cascade
   add_foreign_key "organizations", "users", column: "approved_by_id", on_delete: :nullify
   add_foreign_key "organizations", "users", column: "blocked_by_id", on_delete: :nullify
-  add_foreign_key "organizations", "users", column: "owner_id", on_delete: :restrict
-  add_foreign_key "refresh_tokens", "users", on_delete: :cascade
   add_foreign_key "users", "users", column: "blocked_by_id", on_delete: :nullify
 end
