@@ -11,19 +11,25 @@ RSpec.describe 'Database Initialization' do
     Open3.capture3(cmd)
   end
 
+  def run_with_db(cmd)
+    original_url = ENV['DATABASE_URL']
+    ENV['DATABASE_URL'] = DB_URL
+    stdout, stderr, status = run_cmd(cmd)
+    ENV['DATABASE_URL'] = original_url
+    [ stdout, stderr, status ]
+  end
+
   before(:all) do
     @original_url = ENV['DATABASE_URL']
 
-    stdout, stderr, status = run_cmd(
-      "set DATABASE_URL=#{DB_URL}&& bundle exec rails db:create db:migrate 2>&1"
-    )
+    stdout, stderr, status = run_with_db("bundle exec rails db:create db:migrate 2>&1")
     unless status.success?
       raise "Database creation/migrations failed:\n#{stderr}\n#{stdout}"
     end
   end
 
   after(:all) do
-    run_cmd("set DATABASE_URL=#{DB_URL}&& bundle exec rails db:drop 2>&1")
+    run_with_db("bundle exec rails db:drop 2>&1")
     ENV['DATABASE_URL'] = @original_url
   end
 
@@ -36,9 +42,7 @@ RSpec.describe 'Database Initialization' do
     end
 
     it 'has no pending migrations' do
-      stdout, _stderr, status = run_cmd(
-        "set DATABASE_URL=#{DB_URL}&& bundle exec rails db:migrate:status 2>&1"
-      )
+      stdout, _stderr, status = run_with_db("bundle exec rails db:migrate:status 2>&1")
       expect(status.success?).to be(true)
       expect(stdout).not_to match(/^\s*down\s/m)
     end
@@ -133,9 +137,7 @@ RSpec.describe 'Database Initialization' do
   describe 'seed data execution' do
     before(:all) do
       ActiveRecord::Base.establish_connection(DB_URL)
-      stdout, stderr, status = run_cmd(
-        "set DATABASE_URL=#{DB_URL}&& bundle exec rails db:seed 2>&1"
-      )
+      stdout, stderr, status = run_with_db("bundle exec rails db:seed 2>&1")
       unless status.success?
         raise "Seeding failed:\n#{stderr}\n#{stdout}"
       end
@@ -191,9 +193,7 @@ RSpec.describe 'Database Initialization' do
     end
 
     it 'is idempotent' do
-      stdout, stderr, status = run_cmd(
-        "set DATABASE_URL=#{DB_URL}&& bundle exec rails db:seed 2>&1"
-      )
+      stdout, stderr, status = run_with_db("bundle exec rails db:seed 2>&1")
       expect(status.success?).to be(true)
       expect(Role.count).to eq(2)
       expect(Category.count).to eq(5)
