@@ -52,4 +52,8 @@ group :development, :test do
   gem "fiddle"
 
   gem "faker", "~> 3.4"
+
+  gem "rspec-rails"
+
+  gem "dotenv-rails"
 end
