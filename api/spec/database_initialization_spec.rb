@@ -3,8 +3,9 @@ require 'open3'
 
 RSpec.describe 'Database Initialization' do
   TEST_DB_NAME = "come2kids_init_test_#{Process.pid}"
-  DB_PASSWORD = ENV.fetch('DB_PASSWORD', '')
-  DB_URL = "postgresql://postgres:#{DB_PASSWORD}@127.0.0.1/#{TEST_DB_NAME}"
+  DB_PASSWORD = ENV.fetch('DB_PASSWORD', 'postgres')
+  DB_HOST = ENV.fetch('DB_HOST', '127.0.0.1')
+  DB_URL = "postgresql://postgres:#{DB_PASSWORD}@#{DB_HOST}/#{TEST_DB_NAME}"
 
   def run_cmd(cmd)
     Open3.capture3(cmd)
