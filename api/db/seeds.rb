@@ -1,13 +1,26 @@
+require 'faker'
+
+Faker::Config.locale = 'uk'
+
 puts "Cleaning database..."
-EventTranslation.destroy_all
-OrganizationTranslation.destroy_all
-Event.destroy_all
-OrganizationManager.destroy_all
-Organization.destroy_all
-Category.destroy_all
-EmailToken.destroy_all
-RefreshToken.destroy_all
-User.where.not(platform_role: "moderator").destroy_all
+EventTranslation.delete_all
+OrganizationTranslation.delete_all
+Event.delete_all
+CompanyMember.delete_all
+Organization.delete_all
+Category.delete_all
+User.where.not(platform_role: "moderator").delete_all
+
+puts "Creating roles..."
+Role.find_or_create_by!(key: "owner") do |r|
+  r.name_uk = "Власник"
+  r.name_en = "Owner"
+end
+
+Role.find_or_create_by!(key: "manager") do |r|
+  r.name_uk = "Менеджер"
+  r.name_en = "Manager"
+end
 
 puts "Creating categories..."
 categories_data = [
@@ -48,11 +61,18 @@ end
 
 puts "Creating demo organization..."
 org = Organization.find_or_create_by!(slug: "demo-events") do |o|
-  o.owner = owner
   o.contact_email = "contact@demo.com"
   o.status = "approved"
   o.approved_at = Time.current
   o.approved_by = moderator
+end
+
+CompanyMember.find_or_create_by!(
+  organization: org,
+  user: owner,
+  role_id: Role::OWNER_ID
+) do |cm|
+  cm.added_by = nil
 end
 
 OrganizationTranslation.find_or_create_by!(organization: org, locale: "uk") do |t|
@@ -67,7 +87,7 @@ end
 
 puts "Creating demo events..."
 education_category = Category.find_by(slug: "education")
-sports_category = Category.find_by(slug: "sports")
+arts_category = Category.find_by(slug: "arts")
 
 events_data = [
   {
@@ -83,23 +103,11 @@ events_data = [
     address: "вул. Хрещатик, 1"
   },
   {
-    title_uk: "Дитячий футбольний турнір",
-    title_en: "Kids Football Tournament",
-    description_uk: "Щорічний турнір для команд 8-12 років",
-    description_en: "Annual tournament for teams aged 8-12",
-    category: sports_category,
-    start_at: 1.month.from_now,
-    end_at: 1.month.from_now + 1.day,
-    location_type: "offline",
-    city: "Львів",
-    address: "Стадіон Арена Львів"
-  },
-  {
     title_uk: "Онлайн курс малювання",
     title_en: "Online Drawing Course",
     description_uk: "Курс акварелі для початківців",
     description_en: "Watercolor course for beginners",
-    category: Category.find_by(slug: "arts"),
+    category: arts_category,
     start_at: 3.days.from_now,
     end_at: 3.days.from_now + 2.hours,
     location_type: "online",
@@ -110,17 +118,18 @@ events_data = [
 events_data.each do |data|
   event = Event.find_or_create_by!(
     organization: org,
-    created_by: owner,
     start_at: data[:start_at]
   ) do |e|
     e.category = data[:category]
+    e.created_by = owner
+    e.end_at = data[:end_at]
+    e.time_zone = "Europe/Kyiv"
+    e.location_type = data[:location_type]
+    e.city = data[:city]
+    e.address = data[:address]
+    e.online_url = data[:online_url]
     e.status = "published"
     e.published_at = Time.current
-    e.end_at = data[:end_at]
-    e.location_type = data[:location_type]
-    e.city = data[:city] if data[:city]
-    e.address = data[:address] if data[:address]
-    e.online_url = data[:online_url] if data[:online_url]
   end
 
   EventTranslation.find_or_create_by!(event: event, locale: "uk") do |t|
@@ -134,9 +143,74 @@ events_data.each do |data|
   end
 end
 
-puts "Creating demo regular user..."
+puts "Generating sample data with Faker..."
+2.times do |i|
+  owner_email = "faker_owner_#{i + 1}@demo.com"
+  faker_owner = User.find_or_create_by!(email: owner_email) do |u|
+    u.first_name = Faker::Name.first_name
+    u.last_name = Faker::Name.last_name
+    u.password = "Password123"
+    u.platform_role = "user"
+    u.is_active = true
+    u.email_confirmed_at = Time.current
+  end
+
+  org_slug = "faker-org-#{i + 1}"
+  faker_org = Organization.find_or_create_by!(slug: org_slug) do |o|
+    o.contact_email = "contact_#{i + 1}@demo.com"
+    o.phone = Faker::PhoneNumber.phone_number
+    o.status = "approved"
+    o.approved_at = Time.current
+    o.approved_by = moderator
+  end
+
+  CompanyMember.find_or_create_by!(
+    organization: faker_org,
+    user: faker_owner,
+    role_id: Role::OWNER_ID
+  ) do |cm|
+    cm.added_by = moderator
+  end
+
+  OrganizationTranslation.find_or_create_by!(
+    organization: faker_org,
+    locale: "uk"
+  ) do |t|
+    t.name = Faker::Company.name
+    t.description = Faker::Company.catch_phrase
+  end
+
+  2.times do |j|
+    event_start = Faker::Time.forward(days: 30 + j * 10)
+    event_end = event_start + rand(2..4).hours
+
+    event = Event.find_or_create_by!(
+      organization: faker_org,
+      start_at: event_start
+    ) do |e|
+      e.category = Category.all.sample
+      e.created_by = faker_owner
+      e.end_at = event_end
+      e.time_zone = "Europe/Kyiv"
+      e.location_type = %w[offline online].sample
+      e.city = Faker::Address.city
+      e.status = "published"
+      e.published_at = Time.current
+    end
+
+    EventTranslation.find_or_create_by!(
+      event: event,
+      locale: "uk"
+    ) do |t|
+      t.title = Faker::Lorem.sentence(word_count: 4)
+      t.description = Faker::Lorem.paragraph(sentence_count: 3)
+    end
+  end
+end
+
+puts "Creating regular user..."
 regular_user = User.find_or_create_by!(email: "user@demo.com") do |u|
-  u.first_name = "Vasya"
+  u.first_name = "Василь"
   u.last_name = "Користувач"
   u.password = "User12345"
   u.platform_role = "user"
@@ -144,10 +218,10 @@ regular_user = User.find_or_create_by!(email: "user@demo.com") do |u|
   u.email_confirmed_at = Time.current
 end
 
-puts "Seed data created successfully!"
-puts "Moderator: #{moderator.email} (password: Moderator123)"
-puts "Owner: #{owner.email} (password: Owner12345)"
-puts "User: #{regular_user.email} (password: User12345)"
-puts "Organization: #{org.slug} (#{org.organization_translations.count} translations)"
-puts "Events: #{Event.count} (#{EventTranslation.count} translations)"
+puts "Seed data created successfully:"
+puts "Moderator: #{moderator.email}"
+puts "Demo Owner: #{owner.email}"
+puts "Demo User: #{regular_user.email}"
+puts "Organizations: #{Organization.count} (1 demo + 2 faker)"
+puts "Events: #{Event.count} (2 demo + 4 faker)"
 puts "Categories: #{Category.count}"
