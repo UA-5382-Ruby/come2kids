@@ -183,6 +183,7 @@ puts "Generating sample data with Faker..."
   2.times do |j|
     event_start = Faker::Time.forward(days: 30 + j * 10)
     event_end = event_start + rand(2..4).hours
+    location_type = %w[offline online].sample
 
     event = Event.find_or_create_by!(
       organization: faker_org,
@@ -192,16 +193,18 @@ puts "Generating sample data with Faker..."
       e.created_by = faker_owner
       e.end_at = event_end
       e.time_zone = "Europe/Kyiv"
-      e.location_type = %w[offline online].sample
-      e.city = Faker::Address.city
+      e.location_type = location_type
+      if location_type == "offline"
+        e.city = Faker::Address.city
+        e.address = Faker::Address.street_address
+      else
+        e.online_url = Faker::Internet.url
+      end
       e.status = "published"
       e.published_at = Time.current
     end
 
-    EventTranslation.find_or_create_by!(
-      event: event,
-      locale: "uk"
-    ) do |t|
+    EventTranslation.find_or_create_by!(event: event, locale: "uk") do |t|
       t.title = Faker::Lorem.sentence(word_count: 4)
       t.description = Faker::Lorem.paragraph(sentence_count: 3)
     end

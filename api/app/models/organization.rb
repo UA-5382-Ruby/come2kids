@@ -1,6 +1,9 @@
 class Organization < ApplicationRecord
   STATUSES = %w[pending_approval approved rejected blocked].freeze
 
+  attr_accessor :owner_user
+  after_create :assign_designated_owner
+
   belongs_to :approved_by, class_name: "User", optional: true
   belongs_to :blocked_by, class_name: "User", optional: true
 
@@ -34,5 +37,12 @@ class Organization < ApplicationRecord
 
   def blocked?
     status == "blocked"
+  end
+
+  private
+
+  def assign_designated_owner
+    return if owner_user.blank?
+    company_members.create!(user: owner_user, role_id: Role::OWNER_ID, added_by: nil)
   end
 end
