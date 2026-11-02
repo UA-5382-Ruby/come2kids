@@ -57,6 +57,15 @@ RSpec.describe RefreshToken do
     end
   end
 
+  describe "indexes" do
+    it "covers user lookups with the composite index only" do
+      columns = described_class.connection.indexes(:refresh_tokens).map(&:columns)
+
+      expect(columns).to include(%w[user_id revoked_at])
+      expect(columns).not_to include(%w[user_id])
+    end
+  end
+
   describe ".revoke_all_for" do
     it "revokes every active token of the user" do
       token

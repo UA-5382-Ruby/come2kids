@@ -57,7 +57,8 @@ module Api
         end
 
         rotated = token.rotate!
-        return render_invalid_refresh_token if rotated.nil?
+        # A concurrent request won the rotation; keep the cookie it has just set.
+        return render_invalid_refresh_token(clear_cookie: false) if rotated.nil?
 
         render_tokens(user, rotated.last)
       end
@@ -97,8 +98,8 @@ module Api
         render_error("CSRF_HEADER_MISSING", "#{CSRF_HEADER} header is required", status: :forbidden)
       end
 
-      def render_invalid_refresh_token
-        delete_refresh_cookie
+      def render_invalid_refresh_token(clear_cookie: true)
+        delete_refresh_cookie if clear_cookie
         render_error("INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired", status: :unauthorized)
       end
 

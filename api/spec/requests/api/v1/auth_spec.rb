@@ -86,14 +86,16 @@ RSpec.describe "Api::V1::Auth", type: :request do
       end
     end
 
-    context "when the account is soft-deleted" do
-      let(:user) { create(:user, :deleted) }
+    { "soft-deleted" => { deleted_at: Time.current }, "inactive" => { is_active: false } }.each do |state, attributes|
+      context "when the account is #{state}" do
+        let(:user) { create(:user, **attributes) }
 
-      it "returns INVALID_CREDENTIALS" do
-        login
+        it "returns INVALID_CREDENTIALS" do
+          login
 
-        expect(response).to have_http_status(:unauthorized)
-        expect(json["code"]).to eq("INVALID_CREDENTIALS")
+          expect(response).to have_http_status(:unauthorized)
+          expect(json["code"]).to eq("INVALID_CREDENTIALS")
+        end
       end
     end
 
@@ -119,6 +121,13 @@ RSpec.describe "Api::V1::Auth", type: :request do
 
       expect(response).to have_http_status(:too_many_requests)
       expect(json["code"]).to eq("TOO_MANY_REQUESTS")
+    end
+
+    it "is rate limited per IP even when the email changes" do
+      20.times { |i| login(email: "probe#{i}@example.com") }
+      login
+
+      expect(response).to have_http_status(:too_many_requests)
     end
   end
 
@@ -152,19 +161,47 @@ RSpec.describe "Api::V1::Auth", type: :request do
         expect(user.refresh_tokens.active).to be_empty
       end
 
-      it "rejects an expired refresh token" do
+      it "does not touch other users' sessions when a token is reused" do
+        other_token, = RefreshToken.issue_for(create(:user))
+        stolen = cookies[:refresh_token]
+        refresh
+        cookies[:refresh_token] = stolen
+        refresh
+
+        expect(other_token.reload).to be_active
+      end
+
+      it "keeps the cookie when a concurrent request already rotated the token" do
+        allow_any_instance_of(RefreshToken).to receive(:rotate!).and_return(nil)
+        refresh
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(set_cookie).not_to include("refresh_token=")
+      end
+
+      it "rejects an expired refresh token and clears the cookie" do
         user.refresh_tokens.sole.update!(expires_at: 1.second.ago)
         refresh
 
         expect(response).to have_http_status(:unauthorized)
         expect(json["code"]).to eq("INVALID_REFRESH_TOKEN")
+        expect(set_cookie).to match(/refresh_token=;/)
       end
 
-      it "requires the X-Requested-With header" do
+      it "requires the X-Requested-With header and keeps the session" do
         refresh({})
 
         expect(response).to have_http_status(:forbidden)
         expect(json["code"]).to eq("CSRF_HEADER_MISSING")
+        expect(user.refresh_tokens.sole).to be_active
+      end
+
+      it "revokes every session when the account was deactivated meanwhile" do
+        user.update!(is_active: false)
+        refresh
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(user.refresh_tokens.active).to be_empty
       end
 
       it "returns USER_BLOCKED and revokes tokens when the user was blocked meanwhile" do
@@ -191,6 +228,21 @@ RSpec.describe "Api::V1::Auth", type: :request do
       expect(response).to have_http_status(:unauthorized)
       expect(json["code"]).to eq("INVALID_REFRESH_TOKEN")
     end
+
+    it "rejects an unknown refresh token" do
+      cookies[:refresh_token] = "unknown"
+      refresh
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(json["code"]).to eq("INVALID_REFRESH_TOKEN")
+    end
+
+    it "is rate limited per IP" do
+      30.times { refresh }
+      refresh
+
+      expect(response).to have_http_status(:too_many_requests)
+    end
   end
 
   describe "POST /api/v1/auth/logout" do
@@ -209,6 +261,20 @@ RSpec.describe "Api::V1::Auth", type: :request do
         refresh
 
         expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "revokes only the session from the cookie" do
+        other_session, = RefreshToken.issue_for(user)
+        logout
+
+        expect(other_session.reload).to be_active
+      end
+
+      it "requires the X-Requested-With header and keeps the session" do
+        post api_v1_auth_logout_path
+
+        expect(response).to have_http_status(:forbidden)
+        expect(user.refresh_tokens.sole).to be_active
       end
     end
 

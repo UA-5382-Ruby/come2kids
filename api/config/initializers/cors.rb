@@ -9,7 +9,8 @@
 # which in turn requires an explicit origin list (no "*").
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins(*ENV.fetch("FRONTEND_ORIGIN", "http://localhost:5173").split(",").map(&:strip))
+    default_origin = Rails.env.local? ? "http://localhost:5173" : ""
+    origins(*ENV.fetch("FRONTEND_ORIGIN", default_origin).split(",").map(&:strip).reject(&:blank?))
 
     resource "*",
       headers: :any,

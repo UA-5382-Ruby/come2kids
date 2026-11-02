@@ -54,7 +54,7 @@ RAILS_ENV=development
 | `JWT_ISSUER` | `come2kids` | Value of the `iss` claim written to and required on access tokens. |
 | `JWT_ACCESS_TTL` | `900` | Access token lifetime in seconds (15 minutes). |
 | `REFRESH_TOKEN_TTL_DAYS` | `30` | Refresh token lifetime in days. |
-| `FRONTEND_ORIGIN` | `http://localhost:5173` | Comma-separated list of origins allowed by CORS (credentials enabled, so `*` is not allowed). |
+| `FRONTEND_ORIGIN` | `http://localhost:5173` in development/test; none otherwise | Comma-separated list of origins allowed by CORS (credentials enabled, so `*` is not allowed). Blank entries are ignored. Production must set this variable; when unset, no origins are allowed outside local environments. |
 
 ---
 
