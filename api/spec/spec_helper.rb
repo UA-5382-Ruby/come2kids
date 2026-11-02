@@ -73,13 +73,6 @@ RSpec.configure do |config|
   # https://rspec.info/features/3-12/rspec-core/configuration/zero-monkey-patching-mode/
   config.disable_monkey_patching!
 
-<<<<<<< HEAD
-  # This setting enables warnings. It's recommended, but in some cases may
-  # be too noisy due to issues in dependencies.
-  config.warnings = true
-
-=======
->>>>>>> f989a6a34f04696409d8fa1333d95afe9688f186
   # Many RSpec users commonly either run the entire suite or an individual
   # file, and it's useful to allow more verbose output when running an
   # individual spec file.
