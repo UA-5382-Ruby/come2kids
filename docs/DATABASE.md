@@ -111,3 +111,13 @@ development:
   host: localhost
   port: 5432
 ```
+
+## Database Documentation
+
+### ER Diagram
+
+**Interactive version:** [Come2Kids ER Diagram on dbdiagram.io](https://dbdiagram.io/d/Come2Kids-—-ER-Diagram-MVP-68cd7c6c960f6d821af514c6)
+
+**Static PNG:** ![ER Diagram](er-diagram.png)
+
+---
