@@ -5,12 +5,16 @@
 
 # Read more: https://github.com/cyu/rack-cors
 
-# Rails.application.config.middleware.insert_before 0, Rack::Cors do
-#   allow do
-#     origins "example.com"
-#
-#     resource "*",
-#       headers: :any,
-#       methods: [:get, :post, :put, :patch, :delete, :options, :head]
-#   end
-# end
+# Credentials are allowed so that the browser sends the refresh token cookie,
+# which in turn requires an explicit origin list (no "*").
+Rails.application.config.middleware.insert_before 0, Rack::Cors do
+  allow do
+    default_origin = Rails.env.local? ? "http://localhost:5173" : ""
+    origins(*ENV.fetch("FRONTEND_ORIGIN", default_origin).split(",").map(&:strip).reject(&:blank?))
+
+    resource "*",
+      headers: :any,
+      methods: [ :get, :post, :put, :patch, :delete, :options, :head ],
+      credentials: true
+  end
+end
