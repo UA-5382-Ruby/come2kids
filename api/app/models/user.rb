@@ -5,8 +5,9 @@ class User < ApplicationRecord
   ROLES = %w[user moderator].freeze
 
   belongs_to :blocked_by, class_name: "User", optional: true
-  has_many :email_tokens, dependent: :destroy
-  has_many :refresh_tokens, dependent: :destroy
+
+  has_many :company_members, dependent: :destroy
+  has_many :organizations, through: :company_members
 
   validates :email, presence: true, uniqueness: true
   validates :first_name, :last_name, presence: true, length: { maximum: 100 }

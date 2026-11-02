@@ -36,9 +36,8 @@ gem "image_processing", "~> 2.2"
 # gem "rack-cors"
 
 group :development, :test do
-  gem "rspec-rails"
   gem "factory_bot_rails"
-  gem "faker"
+  gem "factory_bot_rails"
   gem "simplecov", require: false
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -54,4 +53,10 @@ group :development, :test do
 
 
   gem "fiddle"
+
+  gem "faker", "~> 3.4"
+
+  gem "rspec-rails"
+
+  gem "dotenv-rails"
 end

@@ -9,6 +9,32 @@ This document covers database management, common commands, and troubleshooting f
 The project uses PostgreSQL as the primary relational database.
 
 ---
+## Permissions Model (Two-Layer)
+
+Since T-1.5.4 (RBAC refactor) the platform uses two independent permission layers:
+
+1. **Platform layer** — `users.platform_role` (`user` / `moderator`).
+   Global capabilities (moderation queue, blocking, appeals) are checked
+   against this column. An unauthenticated requester is a Guest.
+
+2. **Organization layer** — `company_members` + `roles`.
+   A membership row `(organization_id, user_id, role_id)` with a composite
+   primary key defines what a user can do inside a specific organization.
+   The `roles` reference table is seeded with `owner` (id 1) and
+   `manager` (id 2); these ids are a fixed contract used by the partial
+   unique indexes:
+   - `idx_company_members_one_owner_per_org` — one owner per organization;
+   - `idx_company_members_one_org_per_user` — one owned organization per user.
+
+`organizations.owner_id` no longer exists: ownership is expressed by a
+`company_members` row with the owner role. Assigning `owner_user` before
+saving a new `Organization` automatically creates the owner membership
+(`after_create` callback).
+
+The `email_tokens` and `refresh_tokens` tables are not part of the baseline:
+they will be introduced with the authentication user story.
+
+---
 
 ## Database Environments
 
@@ -22,9 +48,9 @@ The project uses PostgreSQL as the primary relational database.
 
 Execute these commands from the `api/` directory.
 
-**Create the databases defined in `config/database.yml`:**
-  ```bash
-  rails db:create
+* **Create the databases defined in `config/database.yml`:**
+```bash
+rails db:create
 ```
 
 * **Run pending migrations:**
@@ -114,10 +140,23 @@ development:
 
 ## Database Documentation
 
+### Seed Data
+
+`rails db:seed` is idempotent (safe to run multiple times) and provides:
+
+- reference data: roles (`owner`, `manager`) and categories (uk/en);
+- fixed demo accounts: `moderator@come2kids.dev` (password from the
+  `MODERATOR_PASSWORD` env variable), `owner@demo.com` / `Owner12345`,
+  `user@demo.com` / `User12345`;
+- a demo organization `demo-events` with two events (uk/en translations);
+- Faker-generated sample organizations and events (uk locale).
+
 ### ER Diagram
 
 **Interactive version:** [Come2Kids ER Diagram on dbdiagram.io](https://dbdiagram.io/d/Come2Kids-—-ER-Diagram-MVP-68cd7c6c960f6d821af514c6)
 
-**Static PNG:** ![ER Diagram](er-diagram.png)
+**Static PNG:**
 
+![ER Diagram](er-diagram.png)
+> **Note:** The diagram reflects the T-1.5.4 RBAC refactor: `roles` and `company_members` tables, removed `organizations.owner_id` and the token tables.
 ---
