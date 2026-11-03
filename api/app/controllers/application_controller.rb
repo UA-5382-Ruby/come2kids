@@ -1,4 +1,6 @@
 class ApplicationController < ActionController::API
+  include Api::QueryParameters
+
   rescue_from StandardError, with: :render_internal_server_error
   rescue_from Api::ApplicationError, with: :render_application_error
   rescue_from ActionController::ParameterMissing, with: :render_bad_request
