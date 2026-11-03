@@ -100,6 +100,12 @@ The generated v1 document is served at `/api-docs/v1/swagger.yaml`. New endpoint
 
 ---
 
+## CORS
+
+Browser access is limited to the origins listed in `FRONTEND_ORIGINS`. The value is comma-separated and must include the complete origin, including scheme and port where applicable. The API accepts JSON requests and the `Authorization` and `Idempotency-Key` headers. Production does not permit wildcard origins.
+
+---
+
 ## Running the API
 
 To start the local development server, navigate to the API directory and run:
