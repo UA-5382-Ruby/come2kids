@@ -50,6 +50,43 @@ The initial error-code catalog is:
 
 ---
 
+## Collection Queries
+
+Collection endpoints accept these query parameters:
+
+| Parameter | Default | Description |
+| --- | ---: | --- |
+| `page` | `1` | One-based page number |
+| `pageSize` | `20` | Number of records per page, up to `100` |
+| `sort` | Resource-specific | A documented sortable field |
+| `direction` | `asc` | `asc` or `desc` |
+
+Filtering parameters are resource-specific and are documented with each endpoint. Unknown sort fields and invalid query values return `BAD_REQUEST`; query values are never interpolated into SQL.
+
+Paginated responses include the count of records after filtering:
+
+```json
+{
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "totalCount": 0,
+    "totalPages": 0
+  }
+}
+```
+
+---
+
+## Serialized Resources
+
+Controllers return serialized resources through the standard `data` envelope. ActiveRecord objects are not rendered directly. Each resource blueprint declares its public fields, so database-only fields such as password digests, soft-delete markers, and internal foreign keys are excluded by default.
+
+Timestamps are returned as UTC ISO 8601 strings with millisecond precision. Monetary values must be exposed as integer fields named with the `Minor` suffix, such as `amountMinor`; floating-point amounts are not part of the API contract.
+
+---
+
 ## Running the API
 
 To start the local development server, navigate to the API directory and run:
