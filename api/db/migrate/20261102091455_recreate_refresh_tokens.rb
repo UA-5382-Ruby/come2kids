@@ -1,4 +1,4 @@
-class CreateRefreshTokens < ActiveRecord::Migration[8.1]
+class RecreateRefreshTokens < ActiveRecord::Migration[8.1]
   def change
     create_table :refresh_tokens do |t|
       t.references :user, null: false, index: false, foreign_key: { on_delete: :cascade }
