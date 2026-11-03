@@ -58,6 +58,10 @@ group :development, :test do
   gem "faker", "~> 3.4"
 
   gem "rspec-rails"
+  gem "rswag-api"
+  gem "rswag-specs"
 
   gem "dotenv-rails"
 end
+
+gem "rswag-ui"

@@ -87,6 +87,19 @@ Timestamps are returned as UTC ISO 8601 strings with millisecond precision. Mone
 
 ---
 
+## OpenAPI Documentation
+
+Swagger UI is available at `/api-docs`. The OpenAPI document is generated from request specs with:
+
+```bash
+cd api
+bundle exec rake rswag:specs:swaggerize
+```
+
+The generated v1 document is served at `/api-docs/v1/swagger.yaml`. New endpoints should add an RSpec file under `spec/requests/` and describe their parameters, response schemas, and documented error responses there.
+
+---
+
 ## Running the API
 
 To start the local development server, navigate to the API directory and run:
