@@ -95,18 +95,16 @@ test:
 production:
   primary: &primary_production
     <<: *default
-    database: api_production
-    username: api
-    password: <%= ENV["API_DATABASE_PASSWORD"] %>
+    database: <%= ENV.fetch("POSTGRES_DB", "come2kids_production") %>
+    username: <%= ENV.fetch("POSTGRES_USER", "come2kids") %>
+    password: <%= ENV["POSTGRES_PASSWORD"] || ENV["API_DATABASE_PASSWORD"] %>
+    host: <%= ENV.fetch("DB_HOST", "localhost") %>
+    port: <%= ENV.fetch("DB_PORT", 5432) %>
   cache:
     <<: *primary_production
-    database: api_production_cache
+    database: <%= ENV.fetch("POSTGRES_CACHE_DB") { "#{ENV.fetch("POSTGRES_DB", "come2kids_production")}_cache" } %>
     migrations_paths: db/cache_migrate
-  queue:
-    <<: *primary_production
-    database: api_production_queue
-    migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: api_production_cable
+    database: <%= ENV.fetch("POSTGRES_CABLE_DB") { "#{ENV.fetch("POSTGRES_DB", "come2kids_production")}_cable" } %>
     migrations_paths: db/cable_migrate
