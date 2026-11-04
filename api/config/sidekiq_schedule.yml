@@ -1,0 +1,15 @@
+# Recurring jobs (sidekiq-cron).
+# Used later for reminders, reservation expiry and payment status checks.
+# Uncomment / add entries when those jobs exist.
+#
+# example_heartbeat:
+#   cron: "0 * * * *"
+#   class: "ExampleHeartbeatJob"
+#   queue: default
+#   description: "Hourly heartbeat to verify the scheduler is running"
+
+example_heartbeat:
+  cron: "0 * * * *"
+  class: "ExampleHeartbeatJob"
+  queue: low
+  description: "Hourly heartbeat to verify the scheduler is running"
