@@ -96,9 +96,9 @@ As a developer, I want a job queue and a mailer configured, so that emails and s
 - Failed emails are retried and logged.
 
 **Tasks**
-- [ ] T-1.4.1 Configure the queue adapter and its Docker service
-- [ ] T-1.4.2 Configure the scheduler for recurring jobs
-- [ ] T-1.4.3 Configure ActionMailer, SMTP settings and a development mail catcher
+- [x] T-1.4.1 Configure the queue adapter and its Docker service
+- [x] T-1.4.2 Configure the scheduler for recurring jobs
+- [x] T-1.4.3 Configure ActionMailer, SMTP settings and a development mail catcher
 - [ ] T-1.4.4 Create a base mailer layout (uk/en)
 
 ### US-1.5 Database baseline and seeds — P0

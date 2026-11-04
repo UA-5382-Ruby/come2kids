@@ -1,7 +1,7 @@
-class ApplicationJob < ActiveJob::Base
-  # Automatically retry jobs that encountered a deadlock
-  # retry_on ActiveRecord::Deadlocked
+# frozen_string_literal: true
 
-  # Most jobs are safe to ignore if the underlying records are no longer available
-  # discard_on ActiveJob::DeserializationError
+class ApplicationJob < ActiveJob::Base
+  # Project-wide defaults only. Mongo failure logging + Result handling
+  # live in LogsFailuresToMongo (include it in specific US-1.4 jobs).
+  discard_on ActiveJob::DeserializationError
 end

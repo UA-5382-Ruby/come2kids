@@ -7,8 +7,9 @@
 # Ignore bundler config.
 /.bundle
 
-# Ignore all environment files.
+# Ignore environment files (keep the committed template).
 /.env*
+!.env.example
 .env
 .env.local
 .env.test
