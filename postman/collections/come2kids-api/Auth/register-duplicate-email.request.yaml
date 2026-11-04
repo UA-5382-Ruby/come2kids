@@ -1,0 +1,45 @@
+$kind: http-request
+name: 'Register - Duplicate Email'
+method: POST
+url: '{{base_url}}/api/v1/auth/register'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{registered_user_email}}",
+      "password": "Password1",
+      "password_confirmation": "Password1",
+      "first_name": "Test",
+      "last_name": "User",
+      "preferred_locale": "en"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 422 Unprocessable Entity", function () {
+        pm.response.to.have.status(422);
+      });
+
+      pm.test("Error code is VALIDATION_ERROR", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("code", "VALIDATION_ERROR");
+      });
+
+      pm.test("Response has an error message", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("message").that.is.a("string").and.not.empty;
+      });
+
+      pm.test("Details array contains an email taken error", function () {
+        const json = pm.response.json();
+        pm.expect(json.details).to.be.an("array").that.is.not.empty;
+        const emailError = json.details.find(function (d) { return d.field === "email"; });
+        pm.expect(emailError, "expected a validation error for field 'email'").to.exist;
+      });

@@ -1,0 +1,12 @@
+name: come2kids - Local
+values:
+  - key: base_url
+    value: 'http://localhost:3000'
+  - key: test_email
+    value: ''
+  - key: registered_user_id
+    value: ''
+  - key: registered_user_email
+    value: ''
+  - key: confirm_token
+    value: ''

@@ -20,6 +20,8 @@ gem "solid_cache"
 gem "solid_queue"
 gem "solid_cable"
 
+gem "redis", "~> 5.0"
+
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
@@ -28,6 +30,10 @@ gem "kamal", require: false
 
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false
+
+gem "rails-i18n"
+
+gem "mailtrap"
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.2"
