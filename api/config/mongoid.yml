@@ -1,0 +1,21 @@
+development:
+  clients:
+    default:
+      uri: <%= ENV.fetch("MONGODB_URI", "mongodb://localhost:27017/come2kids_development") %>
+      options:
+        server_selection_timeout: 5
+
+test:
+  clients:
+    default:
+      uri: <%= ENV.fetch("MONGODB_URI", "mongodb://localhost:27017/come2kids_test") %>
+      options:
+        server_selection_timeout: 5
+
+production:
+  clients:
+    default:
+      # Compose / production must set MONGODB_URI; fallback keeps ERB from breaking other envs.
+      uri: <%= ENV.fetch("MONGODB_URI", "mongodb://localhost:27017/come2kids_production") %>
+      options:
+        server_selection_timeout: 5
