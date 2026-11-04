@@ -38,12 +38,12 @@ class ApplicationController < ActionController::API
   end
 
   def render_validation_error(error)
-    details = error.record.errors.map do |validation_error|
+    details = error.record&.errors&.map do |validation_error|
       {
         field: validation_error.attribute.to_s,
         message: validation_error.message
       }
-    end
+    end || []
 
     render_error(
       code: Api::ErrorCodes::VALIDATION_FAILED,

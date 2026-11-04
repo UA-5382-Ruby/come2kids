@@ -20,6 +20,10 @@ RSpec.describe ApplicationController, type: :controller do
       raise ActiveRecord::RecordInvalid.new(record)
     end
 
+    def record_not_saved_without_record
+      raise ActiveRecord::RecordNotSaved
+    end
+
     def unexpected_error
       raise RuntimeError, "database connection failed"
     end
@@ -30,6 +34,7 @@ RSpec.describe ApplicationController, type: :controller do
       get "application_error" => "anonymous#application_error"
       get "missing_record" => "anonymous#missing_record"
       get "invalid_record" => "anonymous#invalid_record"
+      get "record_not_saved_without_record" => "anonymous#record_not_saved_without_record"
       get "unexpected_error" => "anonymous#unexpected_error"
     end
   end
@@ -75,6 +80,17 @@ RSpec.describe ApplicationController, type: :controller do
     expect(response.parsed_body).to eq(
       "code" => "INTERNAL_SERVER_ERROR",
       "message" => "An unexpected error occurred.",
+      "details" => []
+    )
+  end
+
+  it "handles validation errors without an attached record" do
+    get :record_not_saved_without_record
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body).to eq(
+      "code" => "VALIDATION_FAILED",
+      "message" => "The request is invalid.",
       "details" => []
     )
   end

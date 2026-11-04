@@ -1,7 +1,9 @@
 require "rails_helper"
 
 RSpec.describe "CORS", type: :request do
-  let(:frontend_origin) { "http://localhost:3000" }
+  let(:frontend_origin) do
+    ENV["FRONTEND_ORIGINS"].presence&.split(",")&.first&.strip || "http://localhost:3000"
+  end
 
   it "allows the configured frontend origin" do
     get "/up", headers: { "Origin" => frontend_origin }

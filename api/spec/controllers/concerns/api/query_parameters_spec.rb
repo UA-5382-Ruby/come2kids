@@ -11,8 +11,7 @@ RSpec.describe "Api::QueryParameters", type: :controller do
         },
         filterable: {
           platformRole: :platform_role
-        },
-        default_sort: "createdAt"
+        }
       )
 
       render json: {

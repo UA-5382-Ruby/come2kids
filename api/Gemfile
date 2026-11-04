@@ -60,8 +60,7 @@ group :development, :test do
   gem "rspec-rails"
   gem "rswag-api"
   gem "rswag-specs"
+  gem "rswag-ui"
 
   gem "dotenv-rails"
 end
-
-gem "rswag-ui"

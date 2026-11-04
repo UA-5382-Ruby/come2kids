@@ -7,6 +7,10 @@ end
 
 allowed_origins = origins.to_s.split(",").filter_map(&:strip).reject(&:empty?)
 
+if allowed_origins.include?("*")
+  raise "FRONTEND_ORIGINS must list explicit origins; wildcard origins are not allowed"
+end
+
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
     origins(*allowed_origins)

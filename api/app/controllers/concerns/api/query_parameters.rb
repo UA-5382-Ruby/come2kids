@@ -9,7 +9,8 @@ module Api
 
     private
 
-    def paginate_collection(relation, sortable:, filterable: {}, default_sort: "created_at")
+    def paginate_collection(relation, sortable:, filterable: {}, default_sort: nil)
+      default_sort ||= sortable.keys.first
       page = query_integer(:page, default: DEFAULT_PAGE, minimum: 1)
       page_size = query_integer(:pageSize, default: DEFAULT_PAGE_SIZE, minimum: 1, maximum: MAX_PAGE_SIZE)
       sort_column = query_column(:sort, sortable, default: default_sort)

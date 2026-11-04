@@ -22,17 +22,7 @@ RSpec.configure do |config|
         description: "HTTP API for the Come2Kids events platform.",
         version: "v1"
       },
-      paths: {},
-      servers: [
-        {
-          url: "https://{defaultHost}",
-          variables: {
-            defaultHost: {
-              default: "api.example.com"
-            }
-          }
-        }
-      ]
+      paths: {}
     }
   }
 
