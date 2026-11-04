@@ -72,9 +72,14 @@ Verify:
     node --version
     npm --version
 
-#### 5. MongoDB (Optional, for logs)
+#### 5. Redis + Sidekiq (background jobs)
 
-Installation is optional at this stage. Can be added later for logging purposes.
+Required for Active Job. Install Redis locally or start the Compose stack (see below).
+
+#### 6. MongoDB (activity / failure logs)
+
+Used for append-only `activity_logs` (job and email failures today; full activity logging later).
+Install MongoDB locally or use Docker Compose.
 
 ---
 
@@ -96,11 +101,18 @@ Installation is optional at this stage. Can be added later for logging purposes.
 
    This will create the database, load the schema, and seed initial data.
 
-4. **Run the server:**
+4. **Copy env template and run Sidekiq + the server:**
 
-       rails server
+       cp .env.example .env
+       bundle exec sidekiq -C config/sidekiq.yml   # terminal 1
+       bin/rails server                            # terminal 2
 
    The API will be available at `http://localhost:3000`.
+
+   Or start the full stack with Docker from the repo root:
+
+       docker compose up -d --build
+       # production: docker compose -f compose.yaml up -d --build
 
 ---
 

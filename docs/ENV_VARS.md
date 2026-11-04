@@ -35,11 +35,30 @@ RAILS_MASTER_KEY=your_master_key_here
 
 ## Managing Environment Variables Locally
 
-For local development, you can use a `.env` file to store environment variables:
+For local development, copy the template and adjust values:
+
+```bash
+cd api
+cp .env.example .env
+```
+
+Key variables (see `api/.env.example` for the full list):
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `REDIS_URL` | Sidekiq / Redis connection | `redis://localhost:6379/0` |
+| `MONGODB_URI` | Activity / failure logs (Mongoid) | `mongodb://localhost:27017/come2kids_development` |
+| `MAIL_HOST` / `MAIL_PORT` | Dev SMTP → Mailpit | `localhost` / `1025` |
+| `MAIL_FROM` | Default From: address | `noreply@come2kids.local` |
+| `SMTP_*` | Production SMTP settings | see `.env.example` |
+| `SIDEKIQ_USERNAME` / `SIDEKIQ_PASSWORD` | HTTP Basic for `/sidekiq` | optional locally |
+| `SECRET_KEY_BASE` | Required in production / Compose | long random hex |
 
 ```bash
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD_HERE@localhost:5432/come2kids_dev
 RAILS_ENV=development
+REDIS_URL=redis://localhost:6379/0
+MONGODB_URI=mongodb://localhost:27017/come2kids_development
 ```
 
 > **Important:** Ensure that `.env` is listed in `.gitignore` to prevent accidental commits of sensitive data.
