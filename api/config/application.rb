@@ -11,6 +11,8 @@ module Api
   class Application < Rails::Application
     config.load_defaults 8.1
     config.api_only = true
+    config.time_zone = "UTC"
+    config.active_record.default_timezone = :utc
 
     # === ОБОВ'ЯЗКОВІ НАЛАШТУВАННЯ ЛОКАЛІЗАЦІЇ ===
     config.i18n.default_locale = :uk
