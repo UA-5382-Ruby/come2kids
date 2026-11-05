@@ -18,15 +18,15 @@ default: &default
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: <%= ENV.fetch("DB_USERNAME").presence %>
+  password: <%= ENV.fetch("DB_PASSWORD").presence %>
+  host: <%= ENV.fetch("DB_HOST").presence %>
+  port: <%= ENV.fetch("DB_PORT").presence %>
 
 
 development:
   <<: *default
-  database: come2kids_dev
-  username: postgres
-  password: zxc
-  host: localhost
-  port: 5432
+  database: <%= ENV.fetch("DB_NAME").presence %>
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
@@ -61,10 +61,7 @@ development:
 test:
   <<: *default
   database: come2kids_test
-  username: postgres
-  password: zxc
-  host: localhost
-  port: 5432
+
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
