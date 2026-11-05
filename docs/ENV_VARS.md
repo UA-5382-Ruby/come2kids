@@ -40,6 +40,7 @@ For local development, you can use a `.env` file to store environment variables:
 ```bash
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD_HERE@localhost:5432/come2kids_dev
 RAILS_ENV=development
+FRONTEND_ORIGINS=http://localhost:3000
 ```
 
 > **Important:** Ensure that `.env` is listed in `.gitignore` to prevent accidental commits of sensitive data.
@@ -53,7 +54,6 @@ RAILS_ENV=development
 | `JWT_SECRET` | `secret_key_base` | Secret used to sign access tokens (HS256). Set a long random value in production. |
 | `JWT_ISSUER` | `come2kids` | Value of the `iss` claim written to and required on access tokens. |
 | `JWT_ACCESS_TTL` | `900` | Access token lifetime in seconds (15 minutes). |
-| `FRONTEND_ORIGIN` | `http://localhost:5173` in development/test; none otherwise | Comma-separated list of origins allowed by CORS. Blank entries are ignored. Production must set this variable; when unset, no origins are allowed outside local environments. |
 
 ---
 
@@ -63,6 +63,16 @@ RAILS_ENV=development
 * Use `.env` files for local environment variables and ensure `.env` is listed in `.gitignore`.
 * For production secrets, rely on secure secret management systems or Rails encrypted credentials (`config/credentials.yml.enc`).
 * Rotate passwords and keys regularly, especially if they are accidentally exposed.
+
+## CORS
+
+`FRONTEND_ORIGINS` is a comma-separated allowlist of browser origins. Include the scheme and port when needed, for example:
+
+```bash
+FRONTEND_ORIGINS=https://app.example.com,https://admin.example.com
+```
+
+In development, the default is `http://localhost:3000` when the variable is omitted. Production requires `FRONTEND_ORIGINS`; wildcard origins are not supported.
 
 ---
 
@@ -77,4 +87,3 @@ rails credentials:edit
 # Set the master key for production
 export RAILS_MASTER_KEY=your_master_key_here
 ```
-

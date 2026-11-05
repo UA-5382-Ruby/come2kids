@@ -24,7 +24,7 @@ module Authenticatable
 
     @current_user = user
   rescue JwtService::ExpiredToken => e
-    render_error("TOKEN_EXPIRED", e.message, status: :unauthorized)
+    render_error(code: Api::ErrorCodes::TOKEN_EXPIRED, message: e.message, status: :unauthorized)
   rescue JwtService::InvalidToken => e
     render_unauthorized(e.message)
   end
@@ -40,12 +40,12 @@ module Authenticatable
   end
 
   def render_unauthorized(message = "Authentication required")
-    render_error("UNAUTHORIZED", message, status: :unauthorized)
+    render_error(code: Api::ErrorCodes::UNAUTHORIZED, message: message, status: :unauthorized)
   end
 
   # FR-APP-1: the appeal token is issued in EPIC-6 (appeals).
   def render_user_blocked(user)
-    render_error("USER_BLOCKED", "Your account has been blocked",
+    render_error(code: Api::ErrorCodes::USER_BLOCKED, message: "Your account has been blocked",
       status: :forbidden, details: [ { field: "block_reason", message: user.block_reason } ])
   end
 end

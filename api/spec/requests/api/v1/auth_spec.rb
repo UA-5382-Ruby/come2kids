@@ -52,7 +52,7 @@ RSpec.describe "Api::V1::Auth", type: :request do
       post api_v1_auth_login_path, params: {}, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(json["code"]).to eq("VALIDATION_ERROR")
+      expect(json["code"]).to eq("VALIDATION_FAILED")
       expect(json["details"].pluck("field")).to eq(%w[email password])
     end
 
