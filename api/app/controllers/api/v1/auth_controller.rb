@@ -16,8 +16,14 @@ module Api
 
         # authenticate_by takes the same time whether or not the email exists.
         user = User.authenticate_by(email: email, password: password)
-        return render_error("INVALID_CREDENTIALS", "Invalid email or password", status: :unauthorized) unless account_usable?(user)
-        return render_error("EMAIL_NOT_CONFIRMED", "Please confirm your email first", status: :forbidden) unless user.is_email_confirmed?
+        unless account_usable?(user)
+          return render_error(code: Api::ErrorCodes::INVALID_CREDENTIALS, message: "Invalid email or password",
+            status: :unauthorized)
+        end
+        unless user.is_email_confirmed?
+          return render_error(code: Api::ErrorCodes::EMAIL_NOT_CONFIRMED, message: "Please confirm your email first",
+            status: :forbidden)
+        end
         return render_user_blocked(user) if user.blocked_at.present?
 
         render json: {
@@ -33,11 +39,13 @@ module Api
         details = []
         details << { field: "email", message: "can't be blank" } if email.blank?
         details << { field: "password", message: "can't be blank" } if password.blank?
-        render_error("VALIDATION_ERROR", "Email and password are required", status: :unprocessable_content, details: details)
+        render_error(code: Api::ErrorCodes::VALIDATION_FAILED, message: "Email and password are required",
+          status: :unprocessable_content, details: details)
       end
 
       def render_too_many_requests
-        render_error("TOO_MANY_REQUESTS", "Too many attempts, please try again later", status: :too_many_requests)
+        render_error(code: Api::ErrorCodes::TOO_MANY_REQUESTS, message: "Too many attempts, please try again later",
+          status: :too_many_requests)
       end
     end
   end
