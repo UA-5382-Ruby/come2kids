@@ -57,7 +57,7 @@ RSpec.describe 'Database Initialization' do
       expected_tables = %w[
         roles users organizations company_members
         organization_translations categories events event_translations
-        refresh_tokens ar_internal_metadata schema_migrations
+        ar_internal_metadata schema_migrations
       ]
       tables = ActiveRecord::Base.connection.tables
       expected_tables.each do |table|
@@ -65,10 +65,15 @@ RSpec.describe 'Database Initialization' do
       end
     end
 
-    # refresh_tokens is recreated by US-2.2; email_tokens comes back with US-2.1.
+    # email_tokens comes back with US-2.1; refresh tokens were removed (access tokens only).
     it 'does not have the email tokens table' do
       tables = ActiveRecord::Base.connection.tables
       expect(tables).not_to include('email_tokens')
+    end
+
+    it 'does not have the refresh tokens table' do
+      tables = ActiveRecord::Base.connection.tables
+      expect(tables).not_to include('refresh_tokens')
     end
 
     it 'does not have owner_id in organizations' do

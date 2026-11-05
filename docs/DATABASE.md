@@ -31,8 +31,9 @@ Since T-1.5.4 (RBAC refactor) the platform uses two independent permission layer
 saving a new `Organization` automatically creates the owner membership
 (`after_create` callback).
 
-The `email_tokens` and `refresh_tokens` tables are not part of the baseline:
-they will be introduced with the authentication user story.
+The `email_tokens` table is not part of the baseline: it will be introduced
+with the registration user story (US-2.1). There is no `refresh_tokens` table:
+login returns only a short-lived JWT access token (`DropRefreshTokens` migration).
 
 ---
 

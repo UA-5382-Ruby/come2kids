@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_02_091455) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_05_121527) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -122,19 +122,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_091455) do
     t.check_constraint "status::text = ANY (ARRAY['pending_approval'::character varying::text, 'approved'::character varying::text, 'rejected'::character varying::text, 'blocked'::character varying::text])", name: "chk_organizations_status"
   end
 
-  create_table "refresh_tokens", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.string "token_digest", null: false
-    t.datetime "expires_at", null: false
-    t.datetime "revoked_at"
-    t.bigint "replaced_by_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["replaced_by_id"], name: "index_refresh_tokens_on_replaced_by_id"
-    t.index ["token_digest"], name: "index_refresh_tokens_on_token_digest", unique: true
-    t.index ["user_id", "revoked_at"], name: "index_refresh_tokens_on_user_id_and_revoked_at"
-  end
-
   create_table "roles", force: :cascade do |t|
     t.string "key", limit: 30, null: false
     t.string "name_uk", limit: 100, null: false
@@ -182,7 +169,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_02_091455) do
   add_foreign_key "organization_translations", "organizations", on_delete: :cascade
   add_foreign_key "organizations", "users", column: "approved_by_id", on_delete: :nullify
   add_foreign_key "organizations", "users", column: "blocked_by_id", on_delete: :nullify
-  add_foreign_key "refresh_tokens", "refresh_tokens", column: "replaced_by_id", on_delete: :nullify
-  add_foreign_key "refresh_tokens", "users", on_delete: :cascade
   add_foreign_key "users", "users", column: "blocked_by_id", on_delete: :nullify
 end

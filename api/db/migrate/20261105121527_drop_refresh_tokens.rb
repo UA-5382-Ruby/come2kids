@@ -1,0 +1,22 @@
+# Refresh tokens were removed: login returns only a short-lived access token.
+class DropRefreshTokens < ActiveRecord::Migration[8.1]
+  def up
+    drop_table :refresh_tokens
+  end
+
+  # Restores the table exactly as RecreateRefreshTokens created it.
+  def down
+    create_table :refresh_tokens do |t|
+      t.references :user, null: false, index: false, foreign_key: { on_delete: :cascade }
+      t.string :token_digest, null: false
+      t.datetime :expires_at, null: false
+      t.datetime :revoked_at
+      t.references :replaced_by, foreign_key: { to_table: :refresh_tokens, on_delete: :nullify }
+
+      t.timestamps
+    end
+
+    add_index :refresh_tokens, :token_digest, unique: true
+    add_index :refresh_tokens, [ :user_id, :revoked_at ]
+  end
+end
