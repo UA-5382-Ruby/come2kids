@@ -10,7 +10,7 @@ RSpec.describe "Health", type: :request do
         type: :object,
         required: %w[status timestamp],
         properties: {
-          status: { type: :string, example: "ok" },
+          status: { type: :string, enum: [ "up" ], example: "up" },
           timestamp: { type: :string, format: "date-time" }
         }
       }

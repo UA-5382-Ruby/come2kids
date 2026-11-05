@@ -7,6 +7,10 @@ end
 
 allowed_origins = origins.to_s.split(",").filter_map(&:strip).reject(&:empty?)
 
+if allowed_origins.empty?
+  raise "FRONTEND_ORIGINS must contain at least one valid origin"
+end
+
 if allowed_origins.include?("*")
   raise "FRONTEND_ORIGINS must list explicit origins; wildcard origins are not allowed"
 end
