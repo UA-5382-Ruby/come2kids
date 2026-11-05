@@ -18,5 +18,9 @@ FactoryBot.define do
     trait :deleted do
       deleted_at { Time.current }
     end
+
+    trait :moderator do
+      platform_role { "moderator" }
+    end
   end
 end

@@ -18,6 +18,8 @@ module Api
         with: -> { render_too_many_requests }
 
       before_action :require_csrf_header, only: %i[refresh logout]
+      # Login, refresh and logout are public: the refresh cookie is the credential here.
+      skip_after_action :verify_authorized
 
       def login
         email = params[:email].to_s.strip.downcase

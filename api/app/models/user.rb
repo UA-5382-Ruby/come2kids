@@ -32,6 +32,30 @@ class User < ApplicationRecord
     email_confirmed_at.present?
   end
 
+  # Roles in organizations keyed by organization id, e.g. { 5 => "owner", 8 => "manager" } (US-2.4).
+  # Memoized, so every authorization check in one request shares a single query.
+  def organization_roles
+    @organization_roles ||= company_members.joins(:role).pluck(:organization_id, "roles.key").to_h
+  end
+
+  # "owner", "manager" or nil when the user has no role in the organization.
+  def role_in(organization)
+    organization_roles[organization.id] if organization
+  end
+
+  def owner_of?(organization)
+    role_in(organization) == Role::OWNER
+  end
+
+  def manager_of?(organization)
+    role_in(organization) == Role::MANAGER
+  end
+
+  def reload(*)
+    @organization_roles = nil
+    super
+  end
+
   private
 
   def password_complexity
