@@ -1,0 +1,4 @@
+$kind: collection
+name: Auth
+description: 'Registration, email confirmation, and resend confirmation endpoints.'
+order: 2000

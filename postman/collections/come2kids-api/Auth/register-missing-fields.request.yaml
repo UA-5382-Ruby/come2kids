@@ -1,0 +1,47 @@
+$kind: http-request
+name: 'Register - Missing Fields'
+method: POST
+url: '{{base_url}}/api/v1/auth/register'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "noname@example.com",
+      "password": "Password1",
+      "password_confirmation": "Password1"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status is 422 Unprocessable Entity", function () {
+        pm.response.to.have.status(422);
+      });
+
+      pm.test("Error code is VALIDATION_ERROR", function () {
+        const json = pm.response.json();
+        pm.expect(json).to.have.property("code", "VALIDATION_ERROR");
+      });
+
+      pm.test("Details array is present and non-empty", function () {
+        const json = pm.response.json();
+        pm.expect(json.details).to.be.an("array").that.is.not.empty;
+      });
+
+      pm.test("Details include a first_name error", function () {
+        const json = pm.response.json();
+        const err = json.details.find(function (d) { return d.field === "first_name"; });
+        pm.expect(err, "expected a validation error for field 'first_name'").to.exist;
+      });
+
+      pm.test("Details include a last_name error", function () {
+        const json = pm.response.json();
+        const err = json.details.find(function (d) { return d.field === "last_name"; });
+        pm.expect(err, "expected a validation error for field 'last_name'").to.exist;
+      });

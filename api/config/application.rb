@@ -6,29 +6,20 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# config/application.rb
 module Api
   class Application < Rails::Application
-    # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.1
+    config.api_only = true
     config.time_zone = "UTC"
     config.active_record.default_timezone = :utc
 
-    # Please, add to the `ignore` list any other `lib` subdirectories that do
-    # not contain `.rb` files, or that should not be reloaded or eager loaded.
-    # Common ones are `templates`, `generators`, or `middleware`, for example.
+    # === ОБОВ'ЯЗКОВІ НАЛАШТУВАННЯ ЛОКАЛІЗАЦІЇ ===
+    config.i18n.default_locale = :uk
+    config.i18n.available_locales = [ :uk, :en ]
+    config.i18n.fallbacks = [ :uk ] # Дозволяє безпечно падати на українську, якщо ключа немає
+    # ============================================
+
     config.autoload_lib(ignore: %w[assets tasks])
-
-    # Configuration for the application, engines, and railties goes here.
-    #
-    # These settings can be overridden in specific environments using the files
-    # in config/environments, which are processed later.
-    #
-    # config.time_zone = "Central Time (US & Canada)"
-    # config.eager_load_paths << Rails.root.join("extras")
-
-    # Only loads a smaller set of middleware suitable for API only apps.
-    # Middleware like session, flash, cookies can be added back manually.
-    # Skip views, helpers and assets when generating a new resource.
-    config.api_only = true
   end
 end
