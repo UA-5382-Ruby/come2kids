@@ -8,7 +8,6 @@ class User < ApplicationRecord
 
   has_many :company_members, dependent: :destroy
   has_many :organizations, through: :company_members
-  has_many :refresh_tokens, dependent: :delete_all
 
   validates :email, presence: true, uniqueness: true
   validates :first_name, :last_name, presence: true, length: { maximum: 100 }

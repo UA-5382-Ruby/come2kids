@@ -9,8 +9,6 @@ Rails.application.routes.draw do
     namespace :v1 do
       scope :auth, controller: :auth, as: :auth do
         post :login
-        post :refresh
-        post :logout
       end
     end
   end

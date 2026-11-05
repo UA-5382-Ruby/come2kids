@@ -5,8 +5,8 @@
 
 # Read more: https://github.com/cyu/rack-cors
 
-# Credentials are allowed so that the browser sends the refresh token cookie,
-# which in turn requires an explicit origin list (no "*").
+# The API authenticates with the Authorization header only (no cookies), so CORS credentials
+# are not needed. Origins are still an explicit list from FRONTEND_ORIGIN.
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
     default_origin = Rails.env.local? ? "http://localhost:5173" : ""
@@ -14,7 +14,6 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
 
     resource "*",
       headers: :any,
-      methods: [ :get, :post, :put, :patch, :delete, :options, :head ],
-      credentials: true
+      methods: [ :get, :post, :put, :patch, :delete, :options, :head ]
   end
 end
