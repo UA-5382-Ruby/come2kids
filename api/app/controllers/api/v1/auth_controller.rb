@@ -11,6 +11,9 @@ module Api
       rate_limit to: 20, within: 1.minute, only: :login, name: 'login-by-ip',
         with: -> { render_too_many_requests }
 
+      # Login is public by design.
+      skip_after_action :verify_authorized
+
       def login
         email = params[:email].to_s.strip.downcase
         password = params[:password].to_s

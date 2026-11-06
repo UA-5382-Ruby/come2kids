@@ -1,13 +1,20 @@
 # frozen_string_literal: true
 
 # Resolves the current user from an "Authorization: Bearer <access token>" header.
-# Controllers opt in with `before_action :authenticate_user!`.
+# Controllers opt in with `before_action :authenticate_user!`, or with `before_action :authenticate_user`
+# on endpoints that guests may also call.
 module Authenticatable
   extend ActiveSupport::Concern
 
   private
 
   attr_reader :current_user
+
+  # Optional authentication: without an Authorization header the request is a guest
+  # (current_user stays nil). A header that is sent must still be a valid token, otherwise 401.
+  def authenticate_user
+    authenticate_user! if request.authorization.present?
+  end
 
   def authenticate_user!
     token = bearer_token

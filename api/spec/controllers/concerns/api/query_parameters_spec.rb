@@ -4,6 +4,9 @@ require "rails_helper"
 
 RSpec.describe "Api::QueryParameters", type: :controller do
   controller do
+    # Tests the response helpers only; authorization is covered in authorizable_spec.rb.
+    skip_after_action :verify_authorized
+
     def index
       records, pagination = paginate_collection(
         User.all,

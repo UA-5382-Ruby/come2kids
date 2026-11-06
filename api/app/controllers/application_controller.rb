@@ -13,6 +13,10 @@ class ApplicationController < ActionController::API
   rescue_from ActiveRecord::RecordInvalid, with: :render_validation_error
   rescue_from ActiveRecord::RecordNotSaved, with: :render_validation_error
 
+  # Must come after `rescue_from StandardError`: Rails checks the handlers declared last first,
+  # so Pundit errors reach Authorizable instead of becoming a 500.
+  include Authorizable
+
   private
 
   def render_application_error(error)
