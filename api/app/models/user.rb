@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 class User < ApplicationRecord
   has_secure_password
 
   LOCALES = %w[uk en].freeze
   ROLES = %w[user moderator].freeze
 
-  belongs_to :blocked_by, class_name: "User", optional: true
+  belongs_to :blocked_by, class_name: 'User', optional: true
 
   has_many :company_members, dependent: :destroy
   has_many :organizations, through: :company_members
@@ -24,7 +26,7 @@ class User < ApplicationRecord
   end
 
   def moderator?
-    platform_role == "moderator"
+    platform_role == 'moderator'
   end
 
   def email_confirmed?

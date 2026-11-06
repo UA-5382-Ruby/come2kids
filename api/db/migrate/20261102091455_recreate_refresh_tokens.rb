@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class RecreateRefreshTokens < ActiveRecord::Migration[8.1]
   def change
     create_table :refresh_tokens do |t|
