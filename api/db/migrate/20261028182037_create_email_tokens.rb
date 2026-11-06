@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateEmailTokens < ActiveRecord::Migration[8.0]
   def change
     create_table :email_tokens do |t|

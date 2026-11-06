@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class FixRoleIdsToConstants < ActiveRecord::Migration[8.0]
   class Role < ActiveRecord::Base
     self.table_name = :roles
