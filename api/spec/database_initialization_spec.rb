@@ -4,6 +4,13 @@ require 'rails_helper'
 require 'open3'
 require 'cgi'
 
+
+# Integration spec for the database initialization flow: it deliberately
+# uses before(:all)/after(:all), file-level constants and several
+# expectations per example, so the following RSpec cops are disabled here.
+# rubocop:disable RSpec/DescribeClass, RSpec/LeakyConstantDeclaration, RSpec/BeforeAfterAll, RSpec/InstanceVariable, RSpec/MultipleExpectations
+
+
 RSpec.describe 'Database Initialization' do
   TEST_DB_NAME = "come2kids_init_test_#{Process.pid}"
   DB_USERNAME = ENV['DB_USERNAME'].presence || 'postgres'
@@ -223,3 +230,4 @@ RSpec.describe 'Database Initialization' do
     end
   end
 end
+# rubocop:enable RSpec/DescribeClass, RSpec/LeakyConstantDeclaration, RSpec/BeforeAfterAll, RSpec/InstanceVariable, RSpec/MultipleExpectations
