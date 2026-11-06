@@ -1,11 +1,15 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 require 'open3'
+require 'cgi'
 
 RSpec.describe 'Database Initialization' do
   TEST_DB_NAME = "come2kids_init_test_#{Process.pid}"
-  DB_PASSWORD = ENV.fetch('DB_PASSWORD', 'postgres')
-  DB_HOST = ENV.fetch('DB_HOST', '127.0.0.1')
-  DB_URL = "postgresql://postgres:#{DB_PASSWORD}@#{DB_HOST}/#{TEST_DB_NAME}"
+  DB_USERNAME = ENV['DB_USERNAME'].presence || 'postgres'
+  DB_PASSWORD = ENV['DB_PASSWORD'].presence || 'postgres'
+  DB_HOST = ENV['DB_HOST'].presence || 'localhost'
+  DB_URL = "postgresql://#{DB_USERNAME}:#{DB_PASSWORD}@#{DB_HOST}/#{TEST_DB_NAME}"
 
   def run_cmd(cmd)
     Open3.capture3(cmd)
@@ -29,8 +33,14 @@ RSpec.describe 'Database Initialization' do
   end
 
   after(:all) do
-    run_with_db("bundle exec rails db:drop 2>&1")
-    ENV['DATABASE_URL'] = @original_url
+    # ToDo: Ensure that the database connection is closed before dropping the test database.
+    # dont drop the database if the connection is still open, as it may cause issues.
+    begin
+      # ActiveRecord::Base.connection.disconnect! if ActiveRecord::Base.connected?
+    ensure
+      run_with_db("bundle exec rails db:drop 2>&1")
+      ENV['DATABASE_URL'] = @original_url
+    end
   end
 
   describe 'database creation and migrations from scratch' do

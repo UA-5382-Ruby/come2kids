@@ -24,7 +24,7 @@ module Authorizable
   def render_not_authorized
     return render_unauthorized if current_user.nil?
 
-    render_error(code: Api::ErrorCodes::FORBIDDEN, message: "You are not allowed to perform this action",
+    render_error(code: Api::ErrorCodes::FORBIDDEN, message: 'You are not allowed to perform this action',
       status: :forbidden)
   end
 end

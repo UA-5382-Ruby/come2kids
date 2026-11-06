@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Category < ApplicationRecord
   has_many :events, dependent: :restrict_with_error
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Api
   class ApplicationError < StandardError
     attr_reader :code, :details, :status

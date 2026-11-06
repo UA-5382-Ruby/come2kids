@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Api
   module QueryParameters
     extend ActiveSupport::Concern
@@ -48,14 +50,14 @@ module Api
       column = allowed_columns.stringify_keys[value.to_s]
       return column if column
 
-      invalid_query_parameter(parameter, "is not sortable")
+      invalid_query_parameter(parameter, 'is not sortable')
     end
 
     def query_direction
-      direction = params["direction"].presence || "asc"
+      direction = params['direction'].presence || 'asc'
       return direction if SORT_DIRECTIONS.include?(direction)
 
-      invalid_query_parameter(:direction, "must be asc or desc")
+      invalid_query_parameter(:direction, 'must be asc or desc')
     end
 
     def query_integer(parameter, default:, minimum:, maximum: nil)
@@ -63,15 +65,15 @@ module Api
       integer = value.is_a?(String) ? Integer(value, 10) : Integer(value)
       return integer if integer >= minimum && (maximum.nil? || integer <= maximum)
 
-      invalid_query_parameter(parameter, "is outside the allowed range")
+      invalid_query_parameter(parameter, 'is outside the allowed range')
     rescue ArgumentError, TypeError
-      invalid_query_parameter(parameter, "must be an integer")
+      invalid_query_parameter(parameter, 'must be an integer')
     end
 
     def invalid_query_parameter(parameter, message)
       raise Api::ApplicationError.new(
         code: Api::ErrorCodes::BAD_REQUEST,
-        message: "Invalid query parameters.",
+        message: 'Invalid query parameters.',
         details: [ { field: parameter.to_s, message: message } ]
       )
     end

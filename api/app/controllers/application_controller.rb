@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ApplicationController < ActionController::API
   include Api::QueryParameters
   include Api::ResponseFormat
@@ -52,7 +54,7 @@ class ApplicationController < ActionController::API
 
     render_error(
       code: Api::ErrorCodes::VALIDATION_FAILED,
-      message: "The request is invalid.",
+      message: 'The request is invalid.',
       details: details,
       status: :unprocessable_entity
     )
@@ -64,7 +66,7 @@ class ApplicationController < ActionController::API
 
     render_error(
       code: Api::ErrorCodes::INTERNAL_SERVER_ERROR,
-      message: "An unexpected error occurred.",
+      message: 'An unexpected error occurred.',
       status: :internal_server_error
     )
   end
