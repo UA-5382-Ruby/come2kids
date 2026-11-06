@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get "/users/me", to: "users#show"
+  put "/users/me", to: "users#update"
   if Rails.env.development? || Rails.env.test?
     mount Rswag::Ui::Engine => "/api-docs"
     mount Rswag::Api::Engine => "/api-docs"
