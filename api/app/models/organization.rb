@@ -1,11 +1,13 @@
+# frozen_string_literal: true
+
 class Organization < ApplicationRecord
   STATUSES = %w[pending_approval approved rejected blocked].freeze
 
   attr_accessor :owner_user
   after_create :assign_designated_owner
 
-  belongs_to :approved_by, class_name: "User", optional: true
-  belongs_to :blocked_by, class_name: "User", optional: true
+  belongs_to :approved_by, class_name: 'User', optional: true
+  belongs_to :blocked_by, class_name: 'User', optional: true
 
   has_many :organization_translations, dependent: :destroy
   has_many :events, dependent: :restrict_with_error
@@ -19,24 +21,24 @@ class Organization < ApplicationRecord
 
   # NOTE: Власник через membership з role_id = OWNER_ID
   has_one :owner_membership, -> { where(role_id: Role::OWNER_ID) },
-          class_name: "CompanyMember"
+          class_name: 'CompanyMember'
   has_one :owner, through: :owner_membership, source: :user
 
   validates :slug, presence: true, uniqueness: { case_sensitive: false }
   validates :contact_email, presence: true
   validates :status, inclusion: { in: STATUSES }
-  validates :rejection_reason, presence: true, if: -> { status == "rejected" }
-  validates :approved_at, presence: true, if: -> { status == "approved" }
+  validates :rejection_reason, presence: true, if: -> { status == 'rejected' }
+  validates :approved_at, presence: true, if: -> { status == 'approved' }
 
-  scope :approved, -> { where(status: "approved") }
-  scope :pending, -> { where(status: "pending_approval") }
+  scope :approved, -> { where(status: 'approved') }
+  scope :pending, -> { where(status: 'pending_approval') }
 
   def approved?
-    status == "approved"
+    status == 'approved'
   end
 
   def blocked?
-    status == "blocked"
+    status == 'blocked'
   end
 
   private

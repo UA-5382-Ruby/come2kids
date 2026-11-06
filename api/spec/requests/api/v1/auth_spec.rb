@@ -1,25 +1,17 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe "Api::V1::Auth", type: :request do
   let(:user) { create(:user) }
   let(:password) { "password1" }
-  let(:headers) { { "X-Requested-With" => "XMLHttpRequest" } }
   let(:json) { response.parsed_body }
-  let(:set_cookie) { Array(response.headers["Set-Cookie"]).join("\n") }
 
   # Rate limits live in Rails.cache; start every example with a clean counter.
   before { Rails.cache.clear }
 
   def login(email: user.email, password: self.password)
-    post api_v1_auth_login_path, params: { email: email, password: password }, as: :json, headers: headers
-  end
-
-  def refresh(request_headers = headers)
-    post api_v1_auth_refresh_path, headers: request_headers
-  end
-
-  def logout
-    post api_v1_auth_logout_path, headers: headers
+    post api_v1_auth_login_path, params: { email: email, password: password }, as: :json
   end
 
   describe "POST /api/v1/auth/login" do
@@ -32,18 +24,9 @@ RSpec.describe "Api::V1::Auth", type: :request do
         expect(JwtService.decode(json["access_token"])["sub"]).to eq(user.id.to_s)
       end
 
-      it "does not expose the refresh token in the body" do
-        expect(json).not_to have_key("refresh_token")
-      end
-
-      it "sets the refresh token as an HttpOnly, SameSite=Strict cookie on /api/v1/auth" do
-        expect(set_cookie).to match(/refresh_token=.+httponly/im)
-          .and match(/samesite=strict/i)
-          .and match(%r{path=/api/v1/auth}i)
-      end
-
-      it "stores one active refresh token" do
-        expect(user.refresh_tokens.active.count).to eq(1)
+      it "returns no refresh token and sets no cookie" do
+        expect(json.keys).to contain_exactly("access_token", "token_type", "expires_in")
+        expect(response.headers["Set-Cookie"]).to be_blank
       end
     end
 
@@ -68,10 +51,10 @@ RSpec.describe "Api::V1::Auth", type: :request do
     end
 
     it "requires email and password" do
-      post api_v1_auth_login_path, params: {}, as: :json, headers: headers
+      post api_v1_auth_login_path, params: {}, as: :json
 
       expect(response).to have_http_status(:unprocessable_content)
-      expect(json["code"]).to eq("VALIDATION_ERROR")
+      expect(json["code"]).to eq("VALIDATION_FAILED")
       expect(json["details"].pluck("field")).to eq(%w[email password])
     end
 
@@ -102,16 +85,13 @@ RSpec.describe "Api::V1::Auth", type: :request do
     context "when the user is blocked" do
       let(:user) { create(:user, :blocked) }
 
-      before { login }
+      it "returns USER_BLOCKED with the reason and no access token" do
+        login
 
-      it "returns USER_BLOCKED with the reason" do
         expect(response).to have_http_status(:forbidden)
         expect(json["code"]).to eq("USER_BLOCKED")
         expect(json["details"].first["message"]).to eq("Spam")
-      end
-
-      it "does not issue a refresh token" do
-        expect(user.refresh_tokens).to be_empty
+        expect(json).not_to have_key("access_token")
       end
     end
 
@@ -131,157 +111,8 @@ RSpec.describe "Api::V1::Auth", type: :request do
     end
   end
 
-  describe "POST /api/v1/auth/refresh" do
-    context "after login" do
-      before { login }
-
-      it "returns a new access token and rotates the refresh token" do
-        old_token = user.refresh_tokens.sole
-        refresh
-
-        expect(response).to have_http_status(:ok)
-        expect(JwtService.decode(json["access_token"])["sub"]).to eq(user.id.to_s)
-        expect(old_token.reload).to be_revoked
-      end
-
-      it "keeps exactly one active refresh token" do
-        refresh
-
-        expect(user.refresh_tokens.active.count).to eq(1)
-      end
-
-      it "revokes every session when a rotated token is reused" do
-        stolen = cookies[:refresh_token]
-        refresh
-        cookies[:refresh_token] = stolen
-        refresh
-
-        expect(response).to have_http_status(:unauthorized)
-        expect(json["code"]).to eq("INVALID_REFRESH_TOKEN")
-        expect(user.refresh_tokens.active).to be_empty
-      end
-
-      it "does not touch other users' sessions when a token is reused" do
-        other_token, = RefreshToken.issue_for(create(:user))
-        stolen = cookies[:refresh_token]
-        refresh
-        cookies[:refresh_token] = stolen
-        refresh
-
-        expect(other_token.reload).to be_active
-      end
-
-      it "keeps the cookie when a concurrent request already rotated the token" do
-        allow_any_instance_of(RefreshToken).to receive(:rotate!).and_return(nil)
-        refresh
-
-        expect(response).to have_http_status(:unauthorized)
-        expect(set_cookie).not_to include("refresh_token=")
-      end
-
-      it "rejects an expired refresh token and clears the cookie" do
-        user.refresh_tokens.sole.update!(expires_at: 1.second.ago)
-        refresh
-
-        expect(response).to have_http_status(:unauthorized)
-        expect(json["code"]).to eq("INVALID_REFRESH_TOKEN")
-        expect(set_cookie).to match(/refresh_token=;/)
-      end
-
-      it "requires the X-Requested-With header and keeps the session" do
-        refresh({})
-
-        expect(response).to have_http_status(:forbidden)
-        expect(json["code"]).to eq("CSRF_HEADER_MISSING")
-        expect(user.refresh_tokens.sole).to be_active
-      end
-
-      it "revokes every session when the account was deactivated meanwhile" do
-        user.update!(is_active: false)
-        refresh
-
-        expect(response).to have_http_status(:unauthorized)
-        expect(user.refresh_tokens.active).to be_empty
-      end
-
-      it "returns USER_BLOCKED and revokes tokens when the user was blocked meanwhile" do
-        user.update!(blocked_at: Time.current, block_reason: "Fraud")
-        refresh
-
-        expect(response).to have_http_status(:forbidden)
-        expect(json["code"]).to eq("USER_BLOCKED")
-        expect(user.refresh_tokens.active).to be_empty
-      end
-
-      it "rejects the token when the account was deleted meanwhile" do
-        user.update!(deleted_at: Time.current)
-        refresh
-
-        expect(response).to have_http_status(:unauthorized)
-        expect(user.refresh_tokens.active).to be_empty
-      end
-    end
-
-    it "rejects a request without a cookie" do
-      refresh
-
-      expect(response).to have_http_status(:unauthorized)
-      expect(json["code"]).to eq("INVALID_REFRESH_TOKEN")
-    end
-
-    it "rejects an unknown refresh token" do
-      cookies[:refresh_token] = "unknown"
-      refresh
-
-      expect(response).to have_http_status(:unauthorized)
-      expect(json["code"]).to eq("INVALID_REFRESH_TOKEN")
-    end
-
-    it "is rate limited per IP" do
-      30.times { refresh }
-      refresh
-
-      expect(response).to have_http_status(:too_many_requests)
-    end
-  end
-
-  describe "POST /api/v1/auth/logout" do
-    context "after login" do
-      before { login }
-
-      it "revokes the refresh token" do
-        logout
-
-        expect(response).to have_http_status(:no_content)
-        expect(user.refresh_tokens.active).to be_empty
-      end
-
-      it "makes the refresh token unusable" do
-        logout
-        refresh
-
-        expect(response).to have_http_status(:unauthorized)
-      end
-
-      it "revokes only the session from the cookie" do
-        other_session, = RefreshToken.issue_for(user)
-        logout
-
-        expect(other_session.reload).to be_active
-      end
-
-      it "requires the X-Requested-With header and keeps the session" do
-        post api_v1_auth_logout_path
-
-        expect(response).to have_http_status(:forbidden)
-        expect(user.refresh_tokens.sole).to be_active
-      end
-    end
-
-    it "succeeds without a cookie" do
-      logout
-
-      expect(response).to have_http_status(:no_content)
-    end
+  it "has no refresh or logout endpoints" do
+    expect(Rails.application.routes.url_helpers).not_to respond_to(:api_v1_auth_refresh_path)
+    expect(Rails.application.routes.url_helpers).not_to respond_to(:api_v1_auth_logout_path)
   end
 end

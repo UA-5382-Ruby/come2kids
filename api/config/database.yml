@@ -15,18 +15,16 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  # For details on connection pooling, see Rails configuration guide
-  # https://guides.rubyonrails.org/configuring.html#database-pooling
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: <%= ENV['DB_USERNAME'] || 'postgres' %>
+  password: <%= ENV['DB_PASSWORD'] || 'postgres' %>
+  host: <%= ENV['DB_HOST'] || 'localhost' %>
+  port: <%= ENV['DB_PORT'] || '5432' %>
 
 
 development:
   <<: *default
-  database: come2kids_dev
-  username: postgres
-  password: zxc
-  host: localhost
-  port: 5432
+  database: <%= ENV['DB_NAME'] || 'come2kids' %>
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
@@ -61,10 +59,7 @@ development:
 test:
   <<: *default
   database: come2kids_test
-  username: postgres
-  password: zxc
-  host: localhost
-  port: 5432
+
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is

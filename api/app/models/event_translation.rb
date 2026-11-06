@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class EventTranslation < ApplicationRecord
   LOCALES = %w[uk en].freeze
 
@@ -7,6 +9,6 @@ class EventTranslation < ApplicationRecord
   validates :locale, uniqueness: { scope: :event_id }
   validates :title, presence: true
 
-  scope :uk, -> { where(locale: "uk") }
-  scope :en, -> { where(locale: "en") }
+  scope :uk, -> { where(locale: 'uk') }
+  scope :en, -> { where(locale: 'en') }
 end

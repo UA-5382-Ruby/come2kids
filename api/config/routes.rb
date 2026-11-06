@@ -1,6 +1,11 @@
 Rails.application.routes.draw do
   get "/users/me", to: "users#show"
   put "/users/me", to: "users#update"
+  if Rails.env.development? || Rails.env.test?
+    mount Rswag::Ui::Engine => "/api-docs"
+    mount Rswag::Api::Engine => "/api-docs"
+  end
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -11,8 +16,6 @@ Rails.application.routes.draw do
     namespace :v1 do
       scope :auth, controller: :auth, as: :auth do
         post :login
-        post :refresh
-        post :logout
       end
     end
   end
