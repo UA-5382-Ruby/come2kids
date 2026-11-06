@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class AddCompanyMembersOwnerIndexes < ActiveRecord::Migration[8.0]
   def change
     # NOTE: Один власник на організацію
