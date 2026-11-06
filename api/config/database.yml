@@ -15,18 +15,16 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  # For details on connection pooling, see Rails configuration guide
-  # https://guides.rubyonrails.org/configuring.html#database-pooling
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  username: <%= ENV.fetch("DB_USERNAME").presence %>
-  password: <%= ENV.fetch("DB_PASSWORD").presence %>
-  host: <%= ENV.fetch("DB_HOST").presence %>
-  port: <%= ENV.fetch("DB_PORT").presence %>
+  username: <%= ENV['DB_USERNAME'] || 'postgres' %>
+  password: <%= ENV['DB_PASSWORD'] || 'postgres' %>
+  host: <%= ENV['DB_HOST'] || 'localhost' %>
+  port: <%= ENV['DB_PORT'] || '5432' %>
 
 
 development:
   <<: *default
-  database: <%= ENV.fetch("DB_NAME").presence %>
+  database: <%= ENV['DB_NAME'] || 'come2kids' %>
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.

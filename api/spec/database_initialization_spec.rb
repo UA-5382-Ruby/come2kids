@@ -4,9 +4,9 @@ require 'cgi'
 
 RSpec.describe 'Database Initialization' do
   TEST_DB_NAME = "come2kids_init_test_#{Process.pid}"
-  DB_USERNAME = ENV.fetch('DB_USERNAME', 'postgres')
-  DB_PASSWORD = ENV.fetch('DB_PASSWORD', 'postgres')
-  DB_HOST = ENV.fetch('DB_HOST').presence || 'localhost'
+  DB_USERNAME = ENV['DB_USERNAME'].presence || 'postgres'
+  DB_PASSWORD = ENV['DB_PASSWORD'].presence || 'postgres'
+  DB_HOST = ENV['DB_HOST'].presence || 'localhost'
   DB_URL = "postgresql://#{DB_USERNAME}:#{DB_PASSWORD}@#{DB_HOST}/#{TEST_DB_NAME}"
 
   def run_cmd(cmd)
@@ -23,7 +23,6 @@ RSpec.describe 'Database Initialization' do
 
   before(:all) do
     @original_url = ENV['DATABASE_URL']
-    puts "Original DATABASE_URL: #{@original_url}"
 
     stdout, stderr, status = run_with_db("bundle exec rails db:create db:migrate 2>&1")
     unless status.success?
@@ -39,7 +38,6 @@ RSpec.describe 'Database Initialization' do
     ensure
       run_with_db("bundle exec rails db:drop 2>&1")
       ENV['DATABASE_URL'] = @original_url
-      puts "Dropped test database #{@original_url}"
     end
   end
 
