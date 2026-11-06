@@ -1,7 +1,12 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe "Api::ResponseFormat", type: :controller do
   controller do
+    # Tests the response helpers only; authorization is covered in authorizable_spec.rb.
+    skip_after_action :verify_authorized
+
     def show
       render_resource(User.new(id: 12, email: "person@example.com"), blueprint: Api::UserBlueprint)
     end

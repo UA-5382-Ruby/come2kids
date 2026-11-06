@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ApplicationController < ActionController::API
   include Api::QueryParameters
   include Api::ResponseFormat
@@ -10,6 +12,10 @@ class ApplicationController < ActionController::API
   rescue_from ActiveRecord::RecordNotFound, with: :render_not_found
   rescue_from ActiveRecord::RecordInvalid, with: :render_validation_error
   rescue_from ActiveRecord::RecordNotSaved, with: :render_validation_error
+
+  # Must come after `rescue_from StandardError`: Rails checks the handlers declared last first,
+  # so Pundit errors reach Authorizable instead of becoming a 500.
+  include Authorizable
 
   private
 
@@ -48,7 +54,7 @@ class ApplicationController < ActionController::API
 
     render_error(
       code: Api::ErrorCodes::VALIDATION_FAILED,
-      message: "The request is invalid.",
+      message: 'The request is invalid.',
       details: details,
       status: :unprocessable_entity
     )
@@ -60,7 +66,7 @@ class ApplicationController < ActionController::API
 
     render_error(
       code: Api::ErrorCodes::INTERNAL_SERVER_ERROR,
-      message: "An unexpected error occurred.",
+      message: 'An unexpected error occurred.',
       status: :internal_server_error
     )
   end
