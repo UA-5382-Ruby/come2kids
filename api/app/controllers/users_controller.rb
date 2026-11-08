@@ -4,10 +4,12 @@ class UsersController < ApplicationController
   before_action :authenticate_user!
 
   def show
+    skip_authorization
     render json: profile_data
   end
 
   def update
+    skip_authorization
     if current_user.update(user_params)
       render json: profile_data
     else
