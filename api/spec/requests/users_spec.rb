@@ -9,10 +9,15 @@ RSpec.describe "Users", type: :request do
 
   describe "GET /users/me" do
     context "when user is authenticated" do
-      it "returns the user profile with 200 OK" do
+      before do
         get "/users/me", headers: headers
+      end
 
+      it "returns 200 OK status" do
         expect(response).to have_http_status(:ok)
+      end
+
+      it "returns the correct user profile data" do
         json = response.parsed_body
         expect(json["id"]).to eq(user.id)
         expect(json["email"]).to eq(user.email)
@@ -23,7 +28,6 @@ RSpec.describe "Users", type: :request do
     context "when authorization header is missing" do
       it "returns 401 Unauthorized" do
         get "/users/me"
-
         expect(response).to have_http_status(:unauthorized)
       end
     end
@@ -41,10 +45,15 @@ RSpec.describe "Users", type: :request do
         }
       end
 
-      it "updates allowed profile fields" do
+      before do
         put "/users/me", params: update_params, headers: headers
+      end
 
+      it "returns 200 OK status" do
         expect(response).to have_http_status(:ok)
+      end
+
+      it "updates allowed profile fields" do
         user.reload
         expect(user.first_name).to eq("UpdatedName")
         expect(user.city).to eq("Kyiv")
@@ -62,14 +71,18 @@ RSpec.describe "Users", type: :request do
         }
       end
 
-      it "ignores the email change and keeps the original value" do
-        expect do
-          put "/users/me", params: params_with_email, headers: headers
-        end.not_to change { user.reload.email }
+      before do
+        put "/users/me", params: params_with_email, headers: headers
+      end
 
+      it "returns 200 OK status" do
         expect(response).to have_http_status(:ok)
-        expect(user.reload.first_name).to eq("UpdatedName")
-        expect(user.reload.email).to eq("original@example.com")
+      end
+
+      it "ignores the email change and updates other fields" do
+        user.reload
+        expect(user.first_name).to eq("UpdatedName")
+        expect(user.email).to eq("original@example.com")
       end
     end
 
@@ -79,7 +92,6 @@ RSpec.describe "Users", type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
         json = response.parsed_body
-        expect(json).to have_key("errors")
         expect(json["errors"]).to include("First name can't be blank")
       end
 
@@ -88,7 +100,6 @@ RSpec.describe "Users", type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
         json = response.parsed_body
-        expect(json).to have_key("errors")
         expect(json["errors"]).to include("Preferred locale is not included in the list")
       end
     end
