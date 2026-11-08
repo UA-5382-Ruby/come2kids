@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Refresh tokens were removed: login returns only a short-lived access token.
 class DropRefreshTokens < ActiveRecord::Migration[8.1]
   def up

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 FactoryBot.define do
   factory :user do
     sequence(:email) { |n| "user#{n}@example.com" }
@@ -28,6 +30,10 @@ FactoryBot.define do
 
     trait :deleted do
       deleted_at { Time.current }
+    end
+
+    trait :moderator do
+      platform_role { "moderator" }
     end
   end
 end

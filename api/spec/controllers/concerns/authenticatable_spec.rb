@@ -1,9 +1,13 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe Authenticatable, type: :controller do
   controller(ApplicationController) do
     include ErrorHandling
     before_action :authenticate_user!
+    # This spec covers authentication only; authorization is covered in authorizable_spec.rb.
+    skip_after_action :verify_authorized
 
     def index
       render json: { user_id: current_user.id }

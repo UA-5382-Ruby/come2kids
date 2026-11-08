@@ -1,13 +1,23 @@
+# frozen_string_literal: true
+
 require 'rails_helper'
 require 'open3'
 require 'cgi'
+
+
+# Integration spec for the database initialization flow: it deliberately
+# uses before(:all)/after(:all), file-level constants and several
+# expectations per example, so the following RSpec cops are disabled here.
+# rubocop:disable RSpec/DescribeClass, RSpec/LeakyConstantDeclaration, RSpec/BeforeAfterAll, RSpec/InstanceVariable, RSpec/MultipleExpectations
+
 
 RSpec.describe 'Database Initialization' do
   TEST_DB_NAME = "come2kids_init_test_#{Process.pid}"
   DB_USERNAME = ENV['DB_USERNAME'].presence || 'postgres'
   DB_PASSWORD = ENV['DB_PASSWORD'].presence || 'postgres'
   DB_HOST = ENV['DB_HOST'].presence || 'localhost'
-  DB_URL = "postgresql://#{DB_USERNAME}:#{DB_PASSWORD}@#{DB_HOST}/#{TEST_DB_NAME}"
+  DB_PORT = ENV['DB_PORT'].presence || '5432'
+  DB_URL = "postgresql://#{DB_USERNAME}:#{DB_PASSWORD}@#{DB_HOST}:#{DB_PORT}/#{TEST_DB_NAME}"
 
   def run_cmd(cmd)
     Open3.capture3(cmd)
@@ -31,13 +41,13 @@ RSpec.describe 'Database Initialization' do
   end
 
   after(:all) do
-    # ToDo: Ensure that the database connection is closed before dropping the test database.
-    # dont drop the database if the connection is still open, as it may cause issues.
     begin
-      # ActiveRecord::Base.connection.disconnect! if ActiveRecord::Base.connected?
+      ActiveRecord::Base.establish_connection(Rails.env.to_sym)
+      ActiveRecord::Base.connection.disconnect! if ActiveRecord::Base.connected?
     ensure
-      run_with_db("bundle exec rails db:drop 2>&1")
+      _stdout, stderr, status = run_with_db("bundle exec rails db:drop 2>&1")
       ENV['DATABASE_URL'] = @original_url
+      raise "Failed to drop temporary database #{TEST_DB_NAME}: #{stderr}" unless status.success?
     end
   end
 
@@ -220,3 +230,4 @@ RSpec.describe 'Database Initialization' do
     end
   end
 end
+# rubocop:enable RSpec/DescribeClass, RSpec/LeakyConstantDeclaration, RSpec/BeforeAfterAll, RSpec/InstanceVariable, RSpec/MultipleExpectations

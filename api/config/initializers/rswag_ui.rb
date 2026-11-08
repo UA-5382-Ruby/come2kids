@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 if Rails.env.development? || Rails.env.test?
   Rswag::Ui.configure do |c|
     # List the Swagger endpoints that you want to be documented through the
@@ -8,7 +10,7 @@ if Rails.env.development? || Rails.env.test?
     # (under openapi_root) as JSON or YAML endpoints, then the list below should
     # correspond to the relative paths for those endpoints.
 
-    c.openapi_endpoint "/api-docs/v1/swagger.yaml", "API V1 Docs"
+    c.openapi_endpoint '/api-docs/v1/swagger.yaml', 'API V1 Docs'
 
     # Add Basic Auth in case your API is private
     # c.basic_auth_enabled = true

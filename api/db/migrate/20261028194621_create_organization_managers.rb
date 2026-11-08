@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateOrganizationManagers < ActiveRecord::Migration[8.0]
   def change
     create_table :organization_managers, id: false do |t|

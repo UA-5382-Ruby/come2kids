@@ -1,9 +1,14 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe "Api::QueryParameters", type: :controller do
   controller do
     include Api::QueryParameters
     include Api::ResponseFormat
+
+    # Tests the response helpers only; authorization is covered in authorizable_spec.rb.
+    skip_after_action :verify_authorized
 
     # ПЕРЕХОПЛЮЄМО ВИНЯТОК БЛОКОМ, щоб уникнути HTML-сторінки помилки
     rescue_from Api::ApplicationError do |error|
