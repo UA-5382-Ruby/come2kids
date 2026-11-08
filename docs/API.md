@@ -47,6 +47,10 @@ The initial error-code catalog is:
 | `VALIDATION_FAILED` | 422 |
 | `TOO_MANY_REQUESTS` | 429 |
 | `INTERNAL_SERVER_ERROR` | 500 |
+| `INVALID_CREDENTIALS` | 401 |
+| `TOKEN_EXPIRED` | 401 |
+| `EMAIL_NOT_CONFIRMED` | 403 |
+| `USER_BLOCKED` | 403 |
 
 ---
 

@@ -14,7 +14,7 @@ RSpec.describe "POST /api/v1/auth/resend-confirmation", type: :request do
   end
 
   context "with an unverified user" do
-    let!(:user) { create(:user, email: "mom@example.com") }
+    let!(:user) { create(:user, :unconfirmed, email: "mom@example.com") }
 
     it "sends a new confirmation email" do
       expect { post path, params: { email: user.email }, as: :json }
@@ -50,7 +50,7 @@ RSpec.describe "POST /api/v1/auth/resend-confirmation", type: :request do
   end
 
   describe "rate limiting (cooldown)" do
-    let!(:user) { create(:user) }
+    let!(:user) { create(:user, :unconfirmed) }
 
     it "ignores a repeated request within the cooldown" do
       Tokens::EmailConfirmation.acquire_cooldown(user)
@@ -112,9 +112,9 @@ RSpec.describe "POST /api/v1/auth/resend-confirmation", type: :request do
     end
 
     it "returns identical responses for existing, unknown, confirmed and throttled emails" do
-      unverified = create(:user)
-      confirmed = create(:user, :confirmed)
-      throttled = create(:user)
+      unverified = create(:user, :unconfirmed)
+      confirmed = create(:user, :confirmed) # Цей залишаємо як є!
+      throttled = create(:user, :unconfirmed)
       Tokens::EmailConfirmation.acquire_cooldown(throttled)
 
       responses = [ unverified.email, "nobody@example.com", confirmed.email, throttled.email ].map do |email|

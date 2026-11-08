@@ -5,9 +5,16 @@ FactoryBot.define do
     last_name { Faker::Name.last_name }
     password { "Password123" }
     preferred_locale { "uk" }
+    platform_role { "user" }
+    is_active { true }
+    email_confirmed_at { Time.current }
 
     trait :confirmed do
       email_confirmed_at { Time.current }
+    end
+
+    trait :unconfirmed do
+      email_confirmed_at { nil }
     end
 
     trait :blocked do
@@ -17,6 +24,10 @@ FactoryBot.define do
 
     trait :moderator do
       platform_role { "moderator" }
+    end
+
+    trait :deleted do
+      deleted_at { Time.current }
     end
   end
 end

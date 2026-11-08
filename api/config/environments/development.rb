@@ -4,9 +4,10 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = true
+
   config.action_mailer.smtp_settings = {
-    address: "smtp.gmail.com",
-    port: 587,
+    address: ENV.fetch("SMTP_ADDRESS", "smtp.gmail.com"),
+    port: ENV.fetch("SMTP_PORT", 587).to_i,
     user_name: ENV["SMTP_USER"],
     password: ENV["SMTP_PASSWORD"],
     authentication: :plain,
@@ -14,11 +15,8 @@ Rails.application.configure do
   }
 
   config.enable_reloading = true
-
   config.eager_load = false
-
   config.consider_all_requests_local = true
-
   config.server_timing = true
 
   if Rails.root.join("tmp/caching-dev.txt").exist?
@@ -28,26 +26,21 @@ Rails.application.configure do
   end
 
   config.cache_store = :memory_store
-
   config.active_storage.service = :local
-
   config.action_mailer.perform_caching = false
 
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  # Використовуємо ENV для хоста та порту за замовчуванням у листах
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch("MAILER_DEFAULT_HOST", "localhost"),
+    port: ENV.fetch("MAILER_DEFAULT_PORT", 3000).to_i
+  }
 
   config.active_support.deprecation = :log
-
   config.active_record.migration_error = :page_load
-
   config.active_record.verbose_query_logs = true
-
   config.active_record.query_log_tags_enabled = true
-
   config.active_job.verbose_enqueue_logs = true
-
   config.action_dispatch.verbose_redirect_logs = true
-
   config.action_view.annotate_rendered_view_with_filenames = true
-
   config.action_controller.raise_on_missing_callback_actions = true
 end

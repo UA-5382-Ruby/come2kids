@@ -15,10 +15,12 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  host: 127.0.0.1
-  port: 5432
-  username: postgres
-  password: <%= ENV["DB_PASSWORD"] %>
+  # Надійні змінні оточення з fallback-значеннями для локальної розробки
+  host: <%= ENV.fetch("DB_HOST", "127.0.0.1") %>
+  port: <%= ENV.fetch("DB_PORT", "5432") %>
+  username: <%= ENV.fetch("DB_USERNAME", "postgres") %>
+  password: <%= ENV.fetch("DB_PASSWORD", "") %>
+
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
@@ -43,38 +45,21 @@ test:
 #
 #   DATABASE_URL="postgres://myuser:mypass@localhost/somedatabase"
 #
-# If the connection URL is provided in the special DATABASE_URL environment
-# variable, Rails will automatically merge its configuration values on top of
-# the values provided in this file. Alternatively, you can specify a connection
-# URL environment variable explicitly:
-#
-#   production:
-#     url: <%= ENV["MY_APP_DATABASE_URL"] %>
-#
-# Connection URLs for non-primary databases can also be configured using
-# environment variables. The variable name is formed by concatenating the
-# connection name with `_DATABASE_URL`. For example:
-#
-#   CACHE_DATABASE_URL="postgres://cacheuser:cachepass@localhost/cachedatabase"
-#
-# Read https://guides.rubyonrails.org/configuring.html#configuring-a-database
-# for a full overview on how database connection configuration can be specified.
-#
 production:
   primary: &primary_production
     <<: *default
-    database: api_production
-    username: api
-    password: <%= ENV["API_DATABASE_PASSWORD"] %>
+    database: <%= ENV.fetch("DB_NAME", "come2kids_production") %>
+    username: <%= ENV.fetch("DB_USERNAME", "come2kids") %>
+    password: <%= ENV["DB_PASSWORD"] %>
   cache:
     <<: *primary_production
-    database: api_production_cache
+    database: <%= ENV.fetch("DB_NAME", "come2kids_production") %>_cache
     migrations_paths: db/cache_migrate
   queue:
     <<: *primary_production
-    database: api_production_queue
+    database: <%= ENV.fetch("DB_NAME", "come2kids_production") %>_queue
     migrations_paths: db/queue_migrate
   cable:
     <<: *primary_production
-    database: api_production_cable
+    database: <%= ENV.fetch("DB_NAME", "come2kids_production") %>_cable
     migrations_paths: db/cable_migrate

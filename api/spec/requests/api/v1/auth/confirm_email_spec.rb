@@ -5,7 +5,7 @@ RSpec.describe "POST /api/v1/auth/confirm-email", type: :request do
   include ActiveSupport::Testing::TimeHelpers
 
   let(:path) { "/api/v1/auth/confirm-email" }
-  let(:user) { create(:user) }
+  let(:user) { create(:user, :unconfirmed) }
   let!(:raw_token) { Tokens::EmailConfirmation.issue(user) }
   def body
     response.parsed_body

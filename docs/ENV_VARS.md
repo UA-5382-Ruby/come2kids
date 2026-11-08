@@ -47,6 +47,16 @@ FRONTEND_ORIGINS=http://localhost:3000
 
 ---
 
+## Authentication
+
+| Variable | Default | Description |
+|---|---|---|
+| `JWT_SECRET` | `secret_key_base` | Secret used to sign access tokens (HS256). Set a long random value in production. |
+| `JWT_ISSUER` | `come2kids` | Value of the `iss` claim written to and required on access tokens. |
+| `JWT_ACCESS_TTL` | `900` | Access token lifetime in seconds (15 minutes). |
+
+---
+
 ## Security Best Practices
 
 * Never commit sensitive information (passwords, API keys, secret tokens) to the Git repository.
