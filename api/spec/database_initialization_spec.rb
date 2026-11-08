@@ -92,6 +92,7 @@ RSpec.describe DatabaseInitialization do
         roles users organizations company_members
         organization_translations categories events event_translations
         ar_internal_metadata schema_migrations
+        active_storage_blobs active_storage_attachments active_storage_variant_records
       ]
       expected_tables.each do |table|
         expect(conn.tables).to include(table)

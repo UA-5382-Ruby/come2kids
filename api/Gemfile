@@ -75,3 +75,5 @@ group :development, :test do
 
   gem 'dotenv-rails'
 end
+
+gem "active_storage_validations", "~> 4.1"

@@ -172,6 +172,8 @@ coverage/
 !/tmp/pids/.keep
 
 # Ignore storage (uploaded files in development and any SQLite databases).
+api/storage/*
+!api/storage/.keep
 /storage/*
 !/storage/.keep
 /tmp/storage/*
