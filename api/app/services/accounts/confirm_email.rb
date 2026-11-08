@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Accounts
   class ConfirmEmail
     def self.call(raw_token)

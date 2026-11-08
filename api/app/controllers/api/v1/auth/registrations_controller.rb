@@ -1,12 +1,15 @@
+# frozen_string_literal: true
+
 module Api
   module V1
     module Auth
       class RegistrationsController < ApplicationController
+        skip_after_action :verify_authorized
         def create
           user = Accounts::Register.call(registration_params)
 
           render json: {
-            message: I18n.t("auth.registered"),
+            message: I18n.t('auth.registered'),
             user: UserSerializer.new(user)
           }, status: :created
         end

@@ -7,13 +7,8 @@ RSpec.describe "Api::QueryParameters", type: :controller do
     include Api::QueryParameters
     include Api::ResponseFormat
 
-    # Tests the response helpers only; authorization is covered in authorizable_spec.rb.
+    # Скасовуємо перевірку для цього анонімного тестового контролера
     skip_after_action :verify_authorized
-
-    # ПЕРЕХОПЛЮЄМО ВИНЯТОК БЛОКОМ, щоб уникнути HTML-сторінки помилки
-    rescue_from Api::ApplicationError do |error|
-      render json: { code: error.code, message: error.message, details: error.details }, status: :bad_request
-    end
 
     def index
       records, pagination = paginate_collection(

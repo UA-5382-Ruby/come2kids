@@ -6,5 +6,5 @@ class ApplicationController < ActionController::API
   include Api::QueryParameters
   include Api::ResponseFormat
   include Authenticatable
-  include Authorizable # Додано з main (новий модуль авторизації)
+  include Authorizable
 end

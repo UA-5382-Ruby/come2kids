@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe "POST /api/v1/auth/resend-confirmation", type: :request do
@@ -5,6 +7,7 @@ RSpec.describe "POST /api/v1/auth/resend-confirmation", type: :request do
   include ActiveSupport::Testing::TimeHelpers
 
   let(:path) { "/api/v1/auth/resend-confirmation" }
+
   def body
     response.parsed_body
   end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Tokens
   class EmailConfirmation
     TTL = 24.hours
@@ -7,7 +9,7 @@ module Tokens
       attr_writer :redis
 
       def redis
-        @redis ||= Redis.new(url: ENV.fetch("REDIS_URL", "redis://localhost:6379/0"))
+        @redis ||= Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'))
       end
 
       def issue(user)

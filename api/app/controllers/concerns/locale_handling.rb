@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module LocaleHandling
   extend ActiveSupport::Concern
 
@@ -16,7 +18,7 @@ module LocaleHandling
   end
 
   def extract_locale_from_header
-    header = request.env["HTTP_ACCEPT_LANGUAGE"].to_s
-    header.split(",").first&.strip&.scan(/^[a-z]{2}/i)&.first&.downcase
+    header = request.env['HTTP_ACCEPT_LANGUAGE'].to_s
+    header.split(',').first&.strip&.scan(/^[a-z]{2}/i)&.first&.downcase
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module ErrorHandling
   extend ActiveSupport::Concern
 
@@ -24,15 +26,15 @@ module ErrorHandling
   end
 
   def render_bad_request(error)
-    param_name = error.respond_to?(:param) ? error.param.to_s : "unknown"
+    param_name = error.respond_to?(:param) ? error.param.to_s : 'unknown'
 
     render_error(
-      code: "PARAMETER_MISSING",
-      message: I18n.t("api_errors.parameter_missing", default: "Bad request"),
+      code: 'PARAMETER_MISSING',
+      message: I18n.t('api_errors.parameter_missing', default: 'Bad request'),
       details: [ {
                   field: param_name,
-                  error: "missing",
-                  message: I18n.t("api_errors.is_required", default: "is required")
+                  error: 'missing',
+                  message: I18n.t('api_errors.is_required', default: 'is required')
                 } ],
       status: :bad_request
     )
@@ -42,9 +44,9 @@ module ErrorHandling
     code = error.message
 
     default_msg = case code
-    when "TOKEN_INVALID" then "The token is invalid or has expired."
-    when "TOKEN_USED" then "This token has already been used."
-    else "Invalid request"
+    when 'TOKEN_INVALID' then 'The token is invalid or has expired.'
+    when 'TOKEN_USED' then 'This token has already been used.'
+    else 'Invalid request'
     end
 
     message = I18n.t("api_errors.#{code.downcase}", default: default_msg)
@@ -58,8 +60,8 @@ module ErrorHandling
 
   def render_not_found(error)
     render_error(
-      code: "NOT_FOUND",
-      message: error.message || I18n.t("api_errors.not_found", default: "Record not found"),
+      code: 'NOT_FOUND',
+      message: error.message || I18n.t('api_errors.not_found', default: 'Record not found'),
       status: :not_found
     )
   end
@@ -74,8 +76,8 @@ module ErrorHandling
     end || []
 
     render_error(
-      code: "VALIDATION_ERROR",
-      message: I18n.t("api_errors.validation_error", default: "Validation failed"),
+      code: 'VALIDATION_ERROR',
+      message: I18n.t('api_errors.validation_error', default: 'Validation failed'),
       details: details,
       status: :unprocessable_entity
     )
@@ -86,8 +88,8 @@ module ErrorHandling
     Rails.logger.error(error.backtrace.join("\n")) if error.backtrace
 
     render_error(
-      code: "INTERNAL_SERVER_ERROR",
-      message: I18n.t("api_errors.internal_server_error", default: "An unexpected error occurred."),
+      code: 'INTERNAL_SERVER_ERROR',
+      message: I18n.t('api_errors.internal_server_error', default: 'An unexpected error occurred.'),
       status: :internal_server_error
     )
   end

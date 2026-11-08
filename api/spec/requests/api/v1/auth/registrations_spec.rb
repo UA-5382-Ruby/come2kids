@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe "POST /api/v1/auth/register", type: :request do
@@ -12,6 +14,7 @@ RSpec.describe "POST /api/v1/auth/register", type: :request do
       last_name: "Shevchenko"
     }
   end
+
   def body
     response.parsed_body
   end

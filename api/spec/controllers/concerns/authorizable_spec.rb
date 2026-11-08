@@ -37,13 +37,13 @@ RSpec.describe Authorizable, type: :controller do
   it_behaves_like "requires authentication"
   it_behaves_like "forbids access from another organization"
 
-  context "as a regular user" do
+  context "when acting as a regular user" do
     it_behaves_like "forbids access" do
       let(:forbidden_user) { create(:user) }
     end
   end
 
-  context "as a moderator" do
+  context "when acting as a moderator" do
     it_behaves_like "forbids access" do
       let(:forbidden_user) { create(:user, :moderator) }
     end
