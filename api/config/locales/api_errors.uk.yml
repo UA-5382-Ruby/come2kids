@@ -1,0 +1,9 @@
+uk:
+  api_errors:
+    parameter_missing: "Відсутній обов'язковий параметр."
+    is_required: "є обов'язковим"
+    token_invalid: "Токен недійсний або термін його дії закінчився."
+    token_used: "Цей токен вже було використано."
+    not_found: "Запис не знайдено"
+    validation_error: "Помилка валідації"
+    internal_server_error: "Сталася неочікувана помилка."

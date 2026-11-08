@@ -29,11 +29,11 @@ module ErrorHandling
     render_error(
       code: "PARAMETER_MISSING",
       message: I18n.t("api_errors.parameter_missing", default: "Bad request"),
-      details: [{
+      details: [ {
                   field: param_name,
                   error: "missing",
                   message: I18n.t("api_errors.is_required", default: "is required")
-                }],
+                } ],
       status: :bad_request
     )
   end
@@ -42,10 +42,10 @@ module ErrorHandling
     code = error.message
 
     default_msg = case code
-                  when "TOKEN_INVALID" then "The token is invalid or has expired."
-                  when "TOKEN_USED" then "This token has already been used."
-                  else "Invalid request"
-                  end
+    when "TOKEN_INVALID" then "The token is invalid or has expired."
+    when "TOKEN_USED" then "This token has already been used."
+    else "Invalid request"
+    end
 
     message = I18n.t("api_errors.#{code.downcase}", default: default_msg)
 

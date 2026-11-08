@@ -29,7 +29,6 @@ Rails.application.configure do
   config.active_storage.service = :local
   config.action_mailer.perform_caching = false
 
-  # Використовуємо ENV для хоста та порту за замовчуванням у листах
   config.action_mailer.default_url_options = {
     host: ENV.fetch("MAILER_DEFAULT_HOST", "localhost"),
     port: ENV.fetch("MAILER_DEFAULT_PORT", 3000).to_i

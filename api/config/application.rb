@@ -14,11 +14,9 @@ module Api
     config.time_zone = "UTC"
     config.active_record.default_timezone = :utc
 
-    # === ОБОВ'ЯЗКОВІ НАЛАШТУВАННЯ ЛОКАЛІЗАЦІЇ ===
     config.i18n.default_locale = :uk
     config.i18n.available_locales = [ :uk, :en ]
-    config.i18n.fallbacks = [ :uk ] # Дозволяє безпечно падати на українську, якщо ключа немає
-    # ============================================
+    config.i18n.fallbacks = [ :uk ]
 
     config.autoload_lib(ignore: %w[assets tasks])
   end
