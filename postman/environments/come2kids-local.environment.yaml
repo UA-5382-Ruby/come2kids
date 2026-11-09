@@ -1,4 +1,0 @@
-name: come2kids - Local
-values:
-  - key: base_url
-    value: 'http://localhost:3000'

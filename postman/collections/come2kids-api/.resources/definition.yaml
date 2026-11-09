@@ -1,3 +1,0 @@
-$kind: collection
-name: 'come2kids API'
-description: 'Endpoint tests for the come2kids Rails API. Run with the come2kids - Local environment after starting the server on http://localhost:3000.'
