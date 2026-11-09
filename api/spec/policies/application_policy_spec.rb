@@ -8,7 +8,7 @@ RSpec.describe ApplicationPolicy do
   let(:manager) { create(:company_member, :manager, organization: organization).user }
 
   describe "deny by default" do
-    actions = %i[index? show? create? new? update? edit? destroy?]
+    let(:actions) { %i[index? show? create? new? update? edit? destroy?] }
 
     {
       "a guest" => -> { nil },

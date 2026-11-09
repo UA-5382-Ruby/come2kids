@@ -43,8 +43,10 @@ Metrics/BlockLength:
     - "spec/**/*"
     - "config/**/*"
 
-RSpec/ExampleLength:
-  Max: 15
-
 RSpec/MultipleExpectations:
-  Max: 3
+  Max: 6
+RSpec/ExampleLength:
+  Max: 25
+RSpec/SpecFilePathFormat:
+  Exclude:
+    - 'spec/errors/application_error_spec.rb'

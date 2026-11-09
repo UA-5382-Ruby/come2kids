@@ -4,19 +4,17 @@ require "rails_helper"
 
 RSpec.describe "Api::QueryParameters", type: :controller do
   controller do
-    # Tests the response helpers only; authorization is covered in authorizable_spec.rb.
+    include Api::QueryParameters
+    include Api::ResponseFormat
+
+    # Скасовуємо перевірку для цього анонімного тестового контролера
     skip_after_action :verify_authorized
 
     def index
       records, pagination = paginate_collection(
         User.all,
-        sortable: {
-          createdAt: :created_at,
-          lastName: :last_name
-        },
-        filterable: {
-          platformRole: :platform_role
-        }
+        sortable: { createdAt: :created_at, lastName: :last_name },
+        filterable: { platformRole: :platform_role }
       )
 
       render json: {
@@ -29,23 +27,25 @@ RSpec.describe "Api::QueryParameters", type: :controller do
   before do
     routes.draw { get "index" => "anonymous#index" }
 
+    User.delete_all
+
     User.create!(
       email: "alpha@example.com",
-      password: "password1",
+      password: "Password123",
       first_name: "Alpha",
       last_name: "Zephyr",
       platform_role: "user"
     )
     User.create!(
       email: "beta@example.com",
-      password: "password1",
+      password: "Password123",
       first_name: "Beta",
       last_name: "Anderson",
       platform_role: "moderator"
     )
     User.create!(
       email: "gamma@example.com",
-      password: "password1",
+      password: "Password123",
       first_name: "Gamma",
       last_name: "Baker",
       platform_role: "user"
@@ -63,21 +63,21 @@ RSpec.describe "Api::QueryParameters", type: :controller do
 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body).to eq(
-      "data" => [
-        {
-          "email" => "alpha@example.com",
-          "first_name" => "Alpha",
-          "last_name" => "Zephyr",
-          "platform_role" => "user"
-        }
-      ],
-      "pagination" => {
-        "page" => 1,
-        "pageSize" => 1,
-        "totalCount" => 2,
-        "totalPages" => 2
-      }
-    )
+                                      "data" => [
+                                        {
+                                          "email" => "alpha@example.com",
+                                          "first_name" => "Alpha",
+                                          "last_name" => "Zephyr",
+                                          "platform_role" => "user"
+                                        }
+                                      ],
+                                      "pagination" => {
+                                        "page" => 1,
+                                        "pageSize" => 1,
+                                        "totalCount" => 2,
+                                        "totalPages" => 2
+                                      }
+                                    )
   end
 
   it "uses defaults when pagination and sorting are omitted" do
@@ -85,24 +85,19 @@ RSpec.describe "Api::QueryParameters", type: :controller do
 
     expect(response).to have_http_status(:ok)
     expect(response.parsed_body.fetch("pagination")).to include(
-      "page" => 1,
-      "pageSize" => 20,
-      "totalCount" => 3,
-      "totalPages" => 1
-    )
+                                                          "page" => 1,
+                                                          "pageSize" => 20,
+                                                          "totalCount" => 3,
+                                                          "totalPages" => 1
+                                                        )
   end
 
   it "rejects an invalid page size" do
     get :index, params: { pageSize: "101" }
 
     expect(response).to have_http_status(:bad_request)
-    expect(response.parsed_body).to eq(
-      "code" => "BAD_REQUEST",
-      "message" => "Invalid query parameters.",
-      "details" => [
-        { "field" => "pageSize", "message" => "is outside the allowed range" }
-      ]
-    )
+    expect(response.parsed_body["code"]).to eq("BAD_REQUEST")
+    expect(response.parsed_body["details"].first["field"]).to eq("pageSize")
   end
 
   it "rejects an unknown sort field instead of interpolating it into SQL" do

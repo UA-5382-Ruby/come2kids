@@ -13,7 +13,10 @@ class User < ApplicationRecord
   has_many :company_members, dependent: :destroy
   has_many :organizations, through: :company_members
 
-  validates :email, presence: true, uniqueness: true
+  normalizes :email, with: ->(email) { email.strip.downcase }
+
+  validates :email, presence: true, uniqueness: true, length: { maximum: 255 },
+            format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true }
   validates :first_name, :last_name, presence: true, length: { maximum: 100 }
   validates :preferred_locale, inclusion: { in: LOCALES }
   validates :platform_role, inclusion: { in: ROLES }

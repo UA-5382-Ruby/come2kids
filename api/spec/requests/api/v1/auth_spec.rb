@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Api::V1::Auth", type: :request do
   let(:user) { create(:user) }
-  let(:password) { "password1" }
+  let(:password) { "Password123" }
   let(:json) { response.parsed_body }
 
   # Rate limits live in Rails.cache; start every example with a clean counter.
