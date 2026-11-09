@@ -71,7 +71,7 @@ module ErrorHandling
       {
         field: validation_error.attribute.to_s,
         error: validation_error.type.to_s,
-        message: validation_error.full_message # Rails автоматично перекладає full_message через I18n
+        message: validation_error.full_message
       }
     end || []
 
