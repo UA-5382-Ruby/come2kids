@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require_relative "boot"
+require_relative 'boot'
 
-require "rails/all"
+require 'rails/all'
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
@@ -27,7 +27,7 @@ module Api
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
 
-    config.time_zone = "UTC"
+    config.time_zone = 'UTC'
     config.active_record.default_timezone = :utc
 
     config.i18n.default_locale = :en
@@ -38,14 +38,14 @@ module Api
     # credentials.yml.enc for encryption keys (mismatched master.key breaks boot).
     # Override in production via ENV (see .env.example).
     config.active_record.encryption.primary_key =
-      ENV.fetch("ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY", "Come2KidsDevPrimaryKeyChangeMe12")
+      ENV.fetch('ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY', 'Come2KidsDevPrimaryKeyChangeMe12')
     config.active_record.encryption.deterministic_key =
-      ENV.fetch("ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY", "Come2KidsDevDeterministicKeyChg")
+      ENV.fetch('ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY', 'Come2KidsDevDeterministicKeyChg')
     config.active_record.encryption.key_derivation_salt =
-      ENV.fetch("ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT", "Come2KidsDevKeyDerivationSalt12")
+      ENV.fetch('ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT', 'Come2KidsDevKeyDerivationSalt12')
 
     # Sidekiq::Web needs cookies + sessions even in an API-only app.
-    config.session_store :cookie_store, key: "_come2kids_session"
+    config.session_store :cookie_store, key: '_come2kids_session'
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, config.session_options
   end

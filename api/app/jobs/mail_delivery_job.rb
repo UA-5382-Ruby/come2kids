@@ -8,7 +8,7 @@ class MailDeliveryJob < ApplicationJob
   queue_as :mailers
 
   def failure_log_action
-    "email.delivery_failed"
+    'email.delivery_failed'
   end
 
   def perform(mailer, mail_method, delivery_method, args:, kwargs: nil, params: nil)

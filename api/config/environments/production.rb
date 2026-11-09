@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "active_support/core_ext/integer/time"
+require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
@@ -15,7 +15,7 @@ Rails.application.configure do
   config.consider_all_requests_local = false
 
   # Cache assets for far-future expiry since they are all digest stamped.
-  config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
+  config.public_file_server.headers = { 'cache-control' => "public, max-age=#{1.year.to_i}" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
@@ -37,10 +37,10 @@ Rails.application.configure do
   config.logger   = ActiveSupport::TaggedLogging.logger(STDOUT)
 
   # Change to "debug" to log everything (including potentially personally-identifiable information!).
-  config.log_level = ENV.fetch("RAILS_LOG_LEVEL", "info")
+  config.log_level = ENV.fetch('RAILS_LOG_LEVEL', 'info')
 
   # Prevent health checks from clogging up the logs.
-  config.silence_healthcheck_path = "/up"
+  config.silence_healthcheck_path = '/up'
 
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
@@ -55,19 +55,19 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address: ENV.fetch("SMTP_ADDRESS", "localhost"),
-    port: ENV.fetch("SMTP_PORT", 587).to_i,
-    domain: ENV.fetch("SMTP_DOMAIN", ENV.fetch("SMTP_ADDRESS", "localhost")),
-    user_name: ENV["SMTP_USER_NAME"],
-    password: ENV["SMTP_PASSWORD"],
-    authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain").to_sym,
-    enable_starttls_auto: ENV.fetch("SMTP_ENABLE_STARTTLS_AUTO", "true") == "true"
+    address: ENV.fetch('SMTP_ADDRESS', 'localhost'),
+    port: ENV.fetch('SMTP_PORT', 587).to_i,
+    domain: ENV.fetch('SMTP_DOMAIN', ENV.fetch('SMTP_ADDRESS', 'localhost')),
+    user_name: ENV['SMTP_USER_NAME'],
+    password: ENV['SMTP_PASSWORD'],
+    authentication: ENV.fetch('SMTP_AUTHENTICATION', 'plain').to_sym,
+    enable_starttls_auto: ENV.fetch('SMTP_ENABLE_STARTTLS_AUTO', 'true') == 'true'
   }
 
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = {
-    host: ENV.fetch("APP_HOST", "example.com"),
-    protocol: ENV.fetch("APP_PROTOCOL", "https")
+    host: ENV.fetch('APP_HOST', 'example.com'),
+    protocol: ENV.fetch('APP_PROTOCOL', 'https')
   }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to

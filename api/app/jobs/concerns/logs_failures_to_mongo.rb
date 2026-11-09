@@ -7,8 +7,8 @@ module LogsFailuresToMongo
   included do
     retry_on StandardError, wait: :polynomially_longer, attempts: 5 do |job, error|
       log_result = ActivityLogs::Writer.call(
-        action: job.try(:failure_log_action) || "job.failed",
-        result: "failure",
+        action: job.try(:failure_log_action) || 'job.failed',
+        result: 'failure',
         entity_type: job.class.name,
         entity_id: job.job_id,
         metadata: {
@@ -27,8 +27,8 @@ module LogsFailuresToMongo
 
     discard_on ActiveJob::DeserializationError do |job, error|
       log_result = ActivityLogs::Writer.call(
-        action: "job.discarded",
-        result: "failure",
+        action: 'job.discarded',
+        result: 'failure',
         entity_type: job.class.name,
         entity_id: job.job_id,
         metadata: {

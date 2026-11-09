@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-redis_url = ENV.fetch("REDIS_URL", "redis://localhost:6379/0")
+redis_url = ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')
 
 Sidekiq.configure_server do |config|
   config.redis = { url: redis_url }
 
-  schedule_file = Rails.root.join("config/sidekiq_schedule.yml")
+  schedule_file = Rails.root.join('config/sidekiq_schedule.yml')
   if File.exist?(schedule_file)
     schedule = YAML.safe_load(
       ERB.new(File.read(schedule_file)).result,

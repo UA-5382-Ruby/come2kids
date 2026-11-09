@@ -6,7 +6,7 @@ class ActivityLog
   include Mongoid::Document
   include Mongoid::Timestamps::Created
 
-  store_in collection: "activity_logs"
+  store_in collection: 'activity_logs'
 
   field :timestamp, type: Time
   field :user_id, type: Integer

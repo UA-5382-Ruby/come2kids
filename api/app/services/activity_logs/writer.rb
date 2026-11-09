@@ -22,7 +22,7 @@ module ActivityLogs
         action: @attrs.fetch(:action),
         entity_type: @attrs[:entity_type],
         entity_id: @attrs[:entity_id]&.to_s,
-        result: @attrs.fetch(:result, "failure"),
+        result: @attrs.fetch(:result, 'failure'),
         ip: @attrs[:ip],
         user_agent: @attrs[:user_agent],
         request_id: @attrs[:request_id],
