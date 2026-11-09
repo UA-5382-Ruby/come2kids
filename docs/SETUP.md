@@ -102,14 +102,19 @@ bin/rails server
 
 ### 6. Docker Compose (recommended full stack)
 
-Compose files:
+Compose files + env templates (repo root):
 
-- [`compose.yaml`](../compose.yaml) — production base
-- [`compose.override.yaml`](../compose.override.yaml) — local development (Mailpit, published ports, safe defaults)
+- [`compose.yaml`](../compose.yaml) — production base (service topology only; values from env file)
+- [`compose.override.yaml`](../compose.override.yaml) — local ports + Mailpit
+- [`.env.example`](../.env.example) — local Compose defaults → copy to `.env`
+- [`.env.production.example`](../.env.production.example) — production template → copy to `.env.production`
 
-From the repository root, **local development** (override merges automatically):
+`api/.env.example` is for running Rails **without** Docker (localhost hosts). Root `.env*` is for Compose (service hostnames like `db`, `mongo`, `mailpit`).
+
+From the repository root, **local development**:
 
 ```bash
+cp .env.example .env
 docker compose up -d --build
 ```
 
@@ -122,10 +127,12 @@ docker compose up -d --build
 | Redis | localhost:6379 |
 | MongoDB | localhost:27017 |
 
-**Production** (skip the override; set required secrets in `.env`):
+**Production** (skip the override; use a real secrets file):
 
 ```bash
-docker compose -f compose.yaml up -d --build
+cp .env.production.example .env.production
+# edit .env.production — replace every placeholder
+docker compose -f compose.yaml --env-file .env.production up -d --build
 ```
 
 Solid Cache / Solid Cable reuse the primary Postgres database in Compose

@@ -111,8 +111,11 @@ Install MongoDB locally or use Docker Compose.
 
    Or start the full stack with Docker from the repo root:
 
+       cp .env.example .env
        docker compose up -d --build
-       # production: docker compose -f compose.yaml up -d --build
+       # production:
+       # cp .env.production.example .env.production
+       # docker compose -f compose.yaml --env-file .env.production up -d --build
 
 ---
 

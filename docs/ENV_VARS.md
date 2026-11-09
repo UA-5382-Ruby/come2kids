@@ -32,14 +32,29 @@ RAILS_MASTER_KEY=your_master_key_here
 
 ## Managing Environment Variables Locally
 
-For local development, copy the template and adjust values:
+There are two templates:
+
+| File | Used for |
+|------|----------|
+| `api/.env.example` → `api/.env` | Rails on the host (no Docker): `localhost` DB/Redis/Mongo/Mailpit |
+| `.env.example` → `.env` (repo root) | Docker Compose local stack (`db` / `mongo` / `mailpit` hostnames) |
+| `.env.production.example` → `.env.production` | Compose production (`docker compose -f compose.yaml --env-file …`) |
+
+For local Rails without Docker:
 
 ```bash
 cd api
 cp .env.example .env
 ```
 
-Key variables (see `api/.env.example` for the full list):
+For Docker Compose (from repo root):
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+Key variables (see the templates for the full list):
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
