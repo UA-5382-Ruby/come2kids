@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
@@ -29,21 +31,28 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Deliver via SMTP to the local mail catcher (Mailpit).
-  config.action_mailer.raise_delivery_errors = true
+  # Deliver via SMTP (Mailpit locally / Compose, or real SMTP via env).
   config.action_mailer.delivery_method = :smtp
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.raise_delivery_errors = true
   config.action_mailer.smtp_settings = {
-    address: ENV.fetch("MAIL_HOST", "localhost"),
-    port: ENV.fetch("MAIL_PORT", 1025).to_i,
-    domain: ENV.fetch("MAIL_DOMAIN", "localhost"),
-    enable_starttls_auto: false
+    address: ENV.fetch("SMTP_ADDRESS", ENV.fetch("MAIL_HOST", "localhost")),
+    port: ENV.fetch("SMTP_PORT", ENV.fetch("MAIL_PORT", 1025)).to_i,
+    domain: ENV.fetch("SMTP_DOMAIN", ENV.fetch("MAIL_DOMAIN", "localhost")),
+    user_name: ENV["SMTP_USER_NAME"] || ENV["SMTP_USER"],
+    password: ENV["SMTP_PASSWORD"],
+    authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain").to_sym,
+    enable_starttls_auto: ENV.fetch("SMTP_ENABLE_STARTTLS_AUTO", "false") == "true"
   }
 
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
   # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch("MAILER_DEFAULT_HOST", "localhost"),
+    port: ENV.fetch("MAILER_DEFAULT_PORT", 3000).to_i
+  }
 
   # Active Job via Sidekiq (requires Redis + a Sidekiq process).
   config.active_job.queue_adapter = :sidekiq

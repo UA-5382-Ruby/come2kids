@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class DropTokenTables < ActiveRecord::Migration[8.0]
   def change
     drop_table :refresh_tokens

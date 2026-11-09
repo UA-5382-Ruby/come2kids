@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class RenameOrganizationManagersToCompanyMembers < ActiveRecord::Migration[8.0]
   def change
     rename_table :organization_managers, :company_members

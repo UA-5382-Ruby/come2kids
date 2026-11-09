@@ -9,6 +9,7 @@ This document covers database management, common commands, and troubleshooting f
 The project uses PostgreSQL as the primary relational database.
 
 ---
+
 ## Permissions Model (Two-Layer)
 
 Since T-1.5.4 (RBAC refactor) the platform uses two independent permission layers:
@@ -31,8 +32,9 @@ Since T-1.5.4 (RBAC refactor) the platform uses two independent permission layer
 saving a new `Organization` automatically creates the owner membership
 (`after_create` callback).
 
-The `email_tokens` and `refresh_tokens` tables are not part of the baseline:
-they will be introduced with the authentication user story.
+The `email_tokens` table is not part of the baseline: it will be introduced
+with the registration user story (US-2.1). There is no `refresh_tokens` table:
+login returns only a short-lived JWT access token (`DropRefreshTokens` migration).
 
 ---
 
@@ -82,8 +84,6 @@ rails db:migrate:status
 rails db:rollback
 ```
 
-
-
 ---
 
 ## Schema Management
@@ -103,6 +103,7 @@ rails generate migration AddFieldNameToTable field_name:type
 ```bash
 rails generate migration AddEmailToUsers email:string
 ```
+
 ---
 
 ## Troubleshooting
@@ -138,6 +139,8 @@ development:
   port: 5432
 ```
 
+---
+
 ## Database Documentation
 
 ### Seed Data
@@ -149,14 +152,34 @@ development:
   `MODERATOR_PASSWORD` env variable), `owner@demo.com` / `Owner12345`,
   `user@demo.com` / `User12345`;
 - a demo organization `demo-events` with two events (uk/en translations);
-- Faker-generated sample organizations and events (uk locale).
+- Faker-generated sample organizations and events (uk locale);
+- **user avatars**: JPEG images attached to moderator, demo owner, and regular user (stored via Active Storage, max 5MB, validated content type).
+
+### Active Storage (T-2.5.2)
+
+User avatars are managed via Active Storage with the following features:
+
+- **Storage backend**: local disk (`storage/` directory in development)
+- **Validations**:
+   - content type: `image/jpeg`, `image/png`, `image/webp`
+   - size: maximum 5MB
+- **Access**: use `user.avatar.attached?` to check, `user.avatar_url` to get the relative path
+- **N+1 prevention**: use `User.active.with_attached_avatar` scope when loading users with avatars
+
+Active Storage adds three tables:
+- `active_storage_blobs` — file metadata (filename, content type, checksum)
+- `active_storage_attachments` — polymorphic join table (links User/Organization to blobs)
+- `active_storage_variant_records` — image variants (thumbnails, resized versions)
+
+The legacy `users.avatar_url` column was removed; all file uploads now use Active Storage.
 
 ### ER Diagram
 
 **Interactive version:** [Come2Kids ER Diagram on dbdiagram.io](https://dbdiagram.io/d/Come2Kids-—-ER-Diagram-MVP-68cd7c6c960f6d821af514c6)
 
-**Static PNG:**
+> **Note:** The diagram reflects:
+> - T-1.5.4 RBAC refactor: `roles` and `company_members` tables, removed `organizations.owner_id` and token tables
+> - T-2.5.2 Active Storage: added `active_storage_blobs`, `active_storage_attachments`, `active_storage_variant_records`; removed `users.avatar_url` column
+> - Polymorphic associations: `active_storage_attachments.record_type` + `record_id` can link to any model (User, Organization, etc.)
 
-![ER Diagram](er-diagram.png)
-> **Note:** The diagram reflects the T-1.5.4 RBAC refactor: `roles` and `company_members` tables, removed `organizations.owner_id` and the token tables.
 ---
