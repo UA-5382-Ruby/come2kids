@@ -1,7 +1,0 @@
-﻿# frozen_string_literal: true
-
-class ApplicationJob < ActiveJob::Base
-  # Project-wide defaults only. Mongo failure logging + Result handling
-  # live in LogsFailuresToMongo (include it in specific US-1.4 jobs).
-  discard_on ActiveJob::DeserializationError
-end
