@@ -1,0 +1,9 @@
+en:
+  api_errors:
+    parameter_missing: "Missing required parameter."
+    is_required: "is required"
+    token_invalid: "The token is invalid or has expired."
+    token_used: "This token has already been used."
+    not_found: "Record not found"
+    validation_error: "Validation failed"
+    internal_server_error: "An unexpected error occurred."

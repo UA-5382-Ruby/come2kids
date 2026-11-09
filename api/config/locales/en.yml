@@ -1,31 +1,40 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  activerecord:
+    errors:
+      models:
+        user:
+          attributes:
+            password:
+              complexity: "must be at least 8 characters long and contain at least one letter and one digit"
+    messages:
+      record_invalid: "Validation failed: %{errors}"
+      blank: "can't be blank"
+      taken: "has already been taken"
+      too_long: "is too long (maximum is %{count} characters)"
+      invalid: "is invalid"
+
+
+  api_errors:
+    validation_error: "Validation failed."
+    parameter_missing: "A required parameter is missing."
+    token_invalid: "The token is invalid."
+    token_used: "This token has already been used."
+
+  auth:
+    registered: "Registration complete. We have sent an email to confirm your address."
+    email_confirmed: "Your email address has been confirmed."
+    confirmation_resent: "If an account with this address exists and is not confirmed yet, we have sent a new email."
+
+  layouts:
+    mailer:
+      footer: "Come2Kids — events and tickets platform."
+
+  user_mailer:
+    confirmation:
+      subject: "Confirm your email address on Come2Kids"
+      greeting: "Hello, %{name}!"
+      intro: "Thank you for signing up for Come2Kids. Please confirm your email address to activate your account."
+      button: "Confirm email address"
+      link_hint: "If the button does not work, copy this link into your browser:"
+      expires: "The link is valid for %{hours} hours."
+      ignore: "If you did not sign up for Come2Kids, simply ignore this email."
