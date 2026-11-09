@@ -4,6 +4,12 @@ uk:
       models:
         user:
           attributes:
+          first_name:
+            blank: "Ім'я не може бути порожнім"
+            last_name:
+              blank: "Прізвище не може бути порожнім"
+            preferred_locale:
+              inclusion: "Обрана мова не є допустимою" # или используй текст из ошибки теста
             password:
               complexity: "має містити щонайменше 8 символів, принаймні одну літеру та одну цифру"
     messages:
