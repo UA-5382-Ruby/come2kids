@@ -3,6 +3,8 @@
 class User < ApplicationRecord
   has_secure_password
 
+  has_one_attached :avatar
+
   LOCALES = %w[uk en].freeze
   ROLES = %w[user moderator].freeze
 
@@ -19,6 +21,9 @@ class User < ApplicationRecord
   validates :preferred_locale, inclusion: { in: LOCALES }
   validates :platform_role, inclusion: { in: ROLES }
   validates :block_reason, presence: true, if: :blocked?
+  validates :avatar,
+            content_type: { in: %w[image/jpeg image/png image/webp], message: 'must be JPEG, PNG, or WEBP' },
+            size: { less_than: 5.megabytes, message: 'must be less than 5MB' }
   validate :password_complexity, if: -> { password_digest_changed? }
 
   scope :active, -> { where(is_active: true) }
@@ -26,6 +31,11 @@ class User < ApplicationRecord
 
   def blocked?
     blocked_at.present?
+  end
+
+  def avatar_url
+    return nil unless avatar.attached?
+    Rails.application.routes.url_helpers.rails_blob_path(avatar, only_path: true)
   end
 
   def moderator?

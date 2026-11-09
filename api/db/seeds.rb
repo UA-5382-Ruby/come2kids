@@ -223,6 +223,28 @@ regular_user = User.find_or_create_by!(email: "user@demo.com") do |u|
   u.email_confirmed_at = Time.current
 end
 
+puts "Attaching avatars to users..."
+
+def attach_avatar(user, filename)
+  return unless user && !user.avatar.attached?
+
+  file_path = Rails.root.join('db', 'seed_files', filename)
+  if File.exist?(file_path)
+    user.avatar.attach(
+      io: File.open(file_path),
+      filename: filename,
+      content_type: 'image/jpeg'
+    )
+    puts "  - Attached #{filename} to #{user.email}"
+  else
+    puts "  - Warning: #{file_path} not found. Skipping avatar for #{user.email}."
+  end
+end
+
+attach_avatar(moderator, 'moderator_avatar.jpg')
+attach_avatar(owner, 'owner_avatar.jpg')
+attach_avatar(regular_user, 'regular_user_avatar.jpg')
+
 puts "Seed data created successfully:"
 puts "Moderator: #{moderator.email}"
 puts "Demo Owner: #{owner.email}"
