@@ -21,10 +21,9 @@ class User < ApplicationRecord
   validates :preferred_locale, inclusion: { in: LOCALES }
   validates :platform_role, inclusion: { in: ROLES }
   validates :block_reason, presence: true, if: :blocked?
-  validates :avatar,
-            content_type: { in: %w[image/jpeg image/png image/webp], message: 'must be JPEG, PNG, or WEBP' },
-            size: { less_than: 5.megabytes, message: 'must be less than 5MB' }
+
   validate :password_complexity, if: -> { password_digest_changed? }
+  validate :acceptable_avatar
 
   scope :active, -> { where(is_active: true) }
   scope :not_blocked, -> { where(blocked_at: nil) }
@@ -71,6 +70,19 @@ class User < ApplicationRecord
   end
 
   private
+
+  def acceptable_avatar
+    return unless avatar.attached?
+
+    unless avatar.blob.byte_size <= 5.megabytes
+      errors.add(:avatar, 'must be less than 5MB')
+    end
+
+    acceptable_types = [ 'image/jpeg', 'image/png', 'image/webp' ]
+    unless acceptable_types.include?(avatar.content_type)
+      errors.add(:avatar, 'must be JPEG, PNG, or WEBP')
+    end
+  end
 
   def password_complexity
     return if password.blank? || password.match?(/\A(?=.*[A-Za-z])(?=.*\d).{8,}\z/)

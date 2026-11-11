@@ -5,7 +5,11 @@ module Api
     identifier :id
 
     fields :email, :first_name, :last_name, :phone, :birth_date,
-           :avatar_url, :city, :preferred_locale, :platform_role, :is_active
+           :city, :preferred_locale, :platform_role, :is_active
+    
+    field :avatar_url do |user|
+      user.avatar.attached? ? user.avatar.url : nil
+    end
 
     field :email_confirmed_at do |user|
       user.email_confirmed_at&.utc&.iso8601(3)
