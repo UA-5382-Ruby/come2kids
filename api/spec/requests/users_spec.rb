@@ -92,7 +92,7 @@ RSpec.describe "Users", type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
         json = response.parsed_body
-        #expect(json["errors"]).to include("First name can't be blank")
+        # expect(json["errors"]).to include("First name can't be blank")
         expect(json["errors"]).to include("First name не може бути пустим")
       end
 
@@ -101,7 +101,7 @@ RSpec.describe "Users", type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
         json = response.parsed_body
-        #expect(json["errors"]).to include("Preferred locale is not included in the list")
+        # expect(json["errors"]).to include("Preferred locale is not included in the list")
         expect(json["errors"]).to include("Preferred locale не включено до переліку")
       end
     end

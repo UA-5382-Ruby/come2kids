@@ -6,7 +6,7 @@ module Api
 
     fields :email, :first_name, :last_name, :phone, :birth_date,
            :city, :preferred_locale, :platform_role, :is_active
-    
+
     field :avatar_url do |user|
       user.avatar.attached? ? user.avatar.url : nil
     end
