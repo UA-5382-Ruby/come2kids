@@ -6,19 +6,18 @@ en:
           attributes:
             first_name:
               blank: "First name can't be blank"
-              last_name:
-                blank: "Last name can't be blank"
-              preferred_locale:
-                inclusion: "Preferred locale is not included in the list"
-              password:
-                complexity: "must be at least 8 characters long and contain at least one letter and one digit"
+            last_name:
+              blank: "Last name can't be blank"
+            preferred_locale:
+              inclusion: "Preferred locale is not included in the list"
+            password:
+              complexity: "must be at least 8 characters long and contain at least one letter and one digit"
     messages:
       record_invalid: "Validation failed: %{errors}"
       blank: "can't be blank"
       taken: "has already been taken"
       too_long: "is too long (maximum is %{count} characters)"
       invalid: "is invalid"
-
 
   api_errors:
     validation_error: "Validation failed."

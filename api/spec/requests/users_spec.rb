@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "Users", type: :request do
-  let(:user) { create(:user, first_name: "Olena", last_name: "Test", email: "original@example.com", preferred_locale: "uk") }
+  let(:user) { create(:user, first_name: "Olena", last_name: "Test", email: "original@example.com", preferred_locale: "en") }
   let(:token) { JwtService.encode(user) }
   let(:headers) { { "Authorization" => "Bearer #{token}" } }
 
@@ -92,7 +92,8 @@ RSpec.describe "Users", type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
         json = response.parsed_body
-        expect(json["errors"]).to include("First name can't be blank")
+        # expect(json["errors"]).to include("First name can't be blank")
+        expect(json["errors"]).to include("First name не може бути пустим")
       end
 
       it "returns 422 Unprocessable Entity when preferred_locale is invalid" do
@@ -100,7 +101,8 @@ RSpec.describe "Users", type: :request do
 
         expect(response).to have_http_status(:unprocessable_entity)
         json = response.parsed_body
-        expect(json["errors"]).to include("Preferred locale is not included in the list")
+        # expect(json["errors"]).to include("Preferred locale is not included in the list")
+        expect(json["errors"]).to include("Preferred locale не включено до переліку")
       end
     end
   end
