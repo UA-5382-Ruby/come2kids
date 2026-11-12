@@ -19,7 +19,6 @@ en:
       too_long: "is too long (maximum is %{count} characters)"
       invalid: "is invalid"
 
-
   api_errors:
     validation_error: "Validation failed."
     parameter_missing: "A required parameter is missing."
