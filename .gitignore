@@ -83,8 +83,10 @@ api/config/*.key
 # dotenv, dotenv-rails
 # TODO Comment out these rules if environment variables can be committed
 .env
+.env.*
 .env*.local
 !.env.example
+!.env.production.example
 
 
 

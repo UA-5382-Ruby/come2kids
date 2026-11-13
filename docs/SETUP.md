@@ -73,9 +73,69 @@ Once all prerequisites are met, clone the repository and initialize the applicat
 ```bash
 git clone https://github.com/YOUR_USERNAME/come2kids.git
 cd come2kids/api
+cp .env.example .env
 bundle install
-rails db:setup
-rails server
+bin/rails db:setup
+```
+
+Start Redis (required for Sidekiq) and MongoDB locally, or use Docker Compose (section 6).
+
+In one terminal start Sidekiq:
+
+```bash
+cd api
+bundle exec sidekiq -C config/sidekiq.yml
+# or: bin/jobs
+```
+
+In another terminal start the API:
+
+```bash
+cd api
+bin/rails server
 ```
 
 > **Note:** The application should now be running and accessible at [http://localhost:3000](http://localhost:3000).
+> Sidekiq Web UI: [http://localhost:3000/sidekiq](http://localhost:3000/sidekiq) (set `SIDEKIQ_USERNAME` / `SIDEKIQ_PASSWORD` to protect it).
+
+---
+
+### 6. Docker Compose (recommended full stack)
+
+Compose files + env templates (repo root):
+
+- [`compose.yaml`](../compose.yaml) — production base (service topology only; values from env file)
+- [`compose.override.yaml`](../compose.override.yaml) — local ports + Mailpit
+- [`.env.example`](../.env.example) — local Compose defaults → copy to `.env`
+- [`.env.production.example`](../.env.production.example) — production template → copy to `.env.production`
+
+`api/.env.example` is for running Rails **without** Docker (localhost hosts). Root `.env*` is for Compose (service hostnames like `db`, `mongo`, `mailpit`).
+
+From the repository root, **local development**:
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+| Service | URL / port |
+|---------|------------|
+| API | http://localhost:3000 |
+| Sidekiq Web | http://localhost:3000/sidekiq |
+| Mailpit UI | http://localhost:8025 |
+| Postgres | localhost:5432 |
+| Redis | localhost:6379 |
+| MongoDB | localhost:27017 |
+
+**Production** (skip the override; use a real secrets file):
+
+```bash
+cp .env.production.example .env.production
+# edit .env.production — replace every placeholder
+docker compose -f compose.yaml --env-file .env.production up -d --build
+```
+
+Solid Cache / Solid Cable reuse the primary Postgres database in Compose
+(`POSTGRES_CACHE_DB` / `POSTGRES_CABLE_DB` point at `POSTGRES_DB`).
+
+Emails in development are caught by Mailpit (SMTP `localhost:1025`). Failed jobs and failed emails are retried by Sidekiq and logged to MongoDB (`activity_logs`).

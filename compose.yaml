@@ -1,0 +1,117 @@
+# Base / production stack for Come2Kids.
+#
+# Values come from an env file (not hardcoded here):
+#   cp .env.production.example .env.production
+#   docker compose -f compose.yaml --env-file .env.production up -d --build
+#
+# Local development (auto-merges compose.override.yaml + root .env):
+#   cp .env.example .env
+#   docker compose up -d --build
+#
+# Only Docker network hostnames stay in this file (db / redis / mongo).
+
+x-api-env: &api-env
+  RAILS_ENV: ${RAILS_ENV}
+  RAILS_LOG_LEVEL: ${RAILS_LOG_LEVEL}
+  SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+  DB_HOST: db
+  DB_PORT: "5432"
+  POSTGRES_DB: ${POSTGRES_DB}
+  POSTGRES_CACHE_DB: ${POSTGRES_CACHE_DB}
+  POSTGRES_CABLE_DB: ${POSTGRES_CABLE_DB}
+  POSTGRES_USER: ${POSTGRES_USER}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  API_DATABASE_PASSWORD: ${API_DATABASE_PASSWORD}
+  REDIS_URL: redis://redis:6379/0
+  MONGODB_URI: ${MONGODB_URI}
+  MAIL_FROM: ${MAIL_FROM}
+  SMTP_ADDRESS: ${SMTP_ADDRESS}
+  SMTP_PORT: ${SMTP_PORT}
+  SMTP_DOMAIN: ${SMTP_DOMAIN}
+  SMTP_USER_NAME: ${SMTP_USER_NAME}
+  SMTP_PASSWORD: ${SMTP_PASSWORD}
+  SMTP_AUTHENTICATION: ${SMTP_AUTHENTICATION}
+  SMTP_ENABLE_STARTTLS_AUTO: ${SMTP_ENABLE_STARTTLS_AUTO}
+  APP_HOST: ${APP_HOST}
+  APP_PROTOCOL: ${APP_PROTOCOL}
+  SIDEKIQ_USERNAME: ${SIDEKIQ_USERNAME}
+  SIDEKIQ_PASSWORD: ${SIDEKIQ_PASSWORD}
+  SIDEKIQ_CONCURRENCY: ${SIDEKIQ_CONCURRENCY}
+  ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: ${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY}
+  ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: ${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY}
+  ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: ${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT}
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  api:
+    build:
+      context: ./api
+    restart: unless-stopped
+    environment:
+      <<: *api-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  sidekiq:
+    build:
+      context: ./api
+    restart: unless-stopped
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+    environment:
+      <<: *api-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongo_data:
