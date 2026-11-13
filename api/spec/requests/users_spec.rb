@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require 'swagger_helper'
 
 RSpec.describe "Users", type: :request do
   let(:user) { create(:user, first_name: "Olena", last_name: "Test", email: "original@example.com", preferred_locale: "en") }

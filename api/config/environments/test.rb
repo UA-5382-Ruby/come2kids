@@ -6,6 +6,9 @@
 # and recreated between test runs. Don't rely on the data there!
 
 Rails.application.configure do
+  config.active_job.queue_adapter = :test
+  config.x.frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # While tests run files are not watched, reloading is not necessary.
