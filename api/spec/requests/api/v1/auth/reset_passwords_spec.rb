@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require 'swagger_helper'
 
 RSpec.describe "POST /api/v1/auth/reset-password", type: :request do
   let(:path) { "/api/v1/auth/reset-password" }
