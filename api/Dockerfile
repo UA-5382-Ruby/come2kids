@@ -1,11 +1,17 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t api .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name api api
-
-# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
+# Production image for the Rails API and Sidekiq worker (same image, different command).
+#
+# Build from this directory:
+#   docker build -t come2kids-api .
+#
+# Or from the monorepo root via Compose:
+#   docker compose up -d --build
+#   docker compose --profile dev up -d --build   # includes Mailpit
+#
+# Web (default):  ./bin/thrust ./bin/rails server
+# Worker:         bundle exec sidekiq -C config/sidekiq.yml
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=4.0.7

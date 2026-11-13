@@ -27,6 +27,10 @@ RSpec.describe "Api::QueryParameters", type: :controller do
   before do
     routes.draw { get "index" => "anonymous#index" }
 
+    # Clear dependents first — events.created_by_id uses ON DELETE RESTRICT.
+    Event.delete_all
+    CompanyMember.delete_all
+    Organization.delete_all
     User.delete_all
 
     User.create!(

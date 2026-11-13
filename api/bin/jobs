@@ -1,6 +1,11 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-require_relative "../config/environment"
-require "solid_queue/cli"
+# Starts Sidekiq with the project configuration.
+# Usage: bin/jobs
+# Equivalent to: bundle exec sidekiq -C config/sidekiq.yml
 
-SolidQueue::Cli.start(ARGV)
+dir = File.expand_path("..", __dir__)
+Dir.chdir(dir)
+
+exec("bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml", *ARGV)
