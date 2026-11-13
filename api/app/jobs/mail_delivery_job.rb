@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 # Active Job wrapper for ActionMailer deliveries (Sidekiq :mailers queue).
+# Subclasses ActionMailer::MailDeliveryJob so `have_enqueued_mail` keeps working.
 # Uses Dry::Monads::Result for the delivery attempt; exhausted failures go to Mongo.
-class MailDeliveryJob < ApplicationJob
+class MailDeliveryJob < ActionMailer::MailDeliveryJob
   include LogsFailuresToMongo
+
 
   queue_as :mailers
 

@@ -91,3 +91,5 @@ group :development, :test do
 end
 
 gem 'active_storage_validations', '~> 4.1'
+
+gem 'aws-sdk-s3', require: false
