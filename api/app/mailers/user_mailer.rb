@@ -10,4 +10,14 @@ class UserMailer < ApplicationMailer
       mail(to: user.email)
     end
   end
+
+  def password_reset(user, raw_token)
+    @user = user
+    @reset_url = "#{Rails.configuration.x.frontend_url}/reset-password?#{{ token: raw_token }.to_query}"
+    @expires_in_hours = Tokens::PasswordReset::TTL.in_hours.to_i
+
+    I18n.with_locale(user.preferred_locale) do
+      mail(to: user.email)
+    end
+  end
 end
