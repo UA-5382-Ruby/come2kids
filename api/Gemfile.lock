@@ -206,10 +206,10 @@ GEM
     minitest (6.1.0)
       drb (~> 2.0)
       prism (>= 1.5, < 3)
-    mongo (2.26.0)
+    mongo (2.26.1)
       base64
       bson (>= 4.14.1, < 6.0.0)
-    mongoid (9.1.1)
+    mongoid (9.1.2)
       activemodel (>= 5.1, < 8.2, != 7.0.0)
       concurrent-ruby (>= 1.0.5, < 2.0)
       mongo (>= 2.18.0, < 3.0.0)
@@ -462,7 +462,7 @@ DEPENDENCIES
   jwt (~> 3.1)
   kamal
   mailtrap
-  mongoid (~> 9.0)
+  mongoid (~> 9.1)
   pg (~> 1.1)
   puma (>= 5.0)
   pundit (~> 2.5)
@@ -560,8 +560,8 @@ CHECKSUMS
   marcel (1.2.1) sha256=1678e9360e32f9eafa917c80029e2f6d10b2715c66a4b87b6d0da9b9cd1f859f
   mini_mime (1.1.5) sha256=8681b7e2e4215f2a159f9400b5816d85e9d8c6c6b491e96a12797e798f8bccef
   minitest (6.1.0) sha256=ff373595aa8888631e8a5463986a76b3845346ae6d7fa46e139c1633d418076e
-  mongo (2.26.0) sha256=e93190d0c184b5c14858e4239a61fe255b2eae86e04bf9590afb962b85a5fa5d
-  mongoid (9.1.1) sha256=eaf0e14f34374fd7b8cb041e913d4c60daa66e1b841188f4635296bcdb2e3337
+  mongo (2.26.1) sha256=ed47d4bc9d5c372976fa28ab3945878afaa8d0a9b6f7cbda7a0bdfd7e48157c5
+  mongoid (9.1.2) sha256=77dade514b2fea07828a22386b4c69af7637522518de491cb78af2a9ec9d6f97
   msgpack (1.8.7) sha256=dfefec761b5f9047e6e8d95d2c7f8af4b3725d984a01942adc533aa819a2df33
   net-imap (0.6.8) sha256=eb30bb62227b64a3af6b518b04b2375113d69f68f15de59b0193b07d98acf6d9
   net-pop (0.1.2) sha256=848b4e982013c15b2f0382792268763b748cce91c9e91e36b0f27ed26420dff3

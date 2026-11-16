@@ -34,7 +34,7 @@ gem 'sidekiq-cron', '~> 2.0'
 gem 'redis', '~> 5.0'
 
 # Activity / failure logs in MongoDB
-gem 'mongoid', '~> 9.0'
+gem 'mongoid', '~> 9.1'
 
 # Result monads (introduced for US-1.4 jobs/services; project-wide adoption later)
 gem 'dry-monads', '~> 1.6'
