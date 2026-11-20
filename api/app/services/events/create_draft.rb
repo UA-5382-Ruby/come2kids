@@ -28,6 +28,7 @@ module Events
         event.save!
         event.event_translations.each(&:save!)
         event.ticket_types.each(&:save!)
+        Transition.record!(event:, from: nil, to: 'draft', actor: @author)
       end
       Success(event)
     rescue ActiveRecord::RecordInvalid => e

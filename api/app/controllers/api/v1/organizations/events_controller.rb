@@ -24,7 +24,35 @@ module Api
           end
         end
 
+        def update
+          event = find_event
+          authorize event, :update?
+
+          result = ::Events::UpdateDraft.call(event: event, attributes: event_params)
+          if result.success?
+            render_resource(result.value!, blueprint: Api::EventBlueprint, view: :managed)
+          else
+            render_record_errors(result.failure)
+          end
+        end
+
+        def submit
+          event = find_event
+          authorize event, :submit?
+
+          result = ::Events::Submit.call(event: event, actor: current_user)
+          if result.success?
+            render_resource(result.value!, blueprint: Api::EventBlueprint, view: :managed)
+          else
+            render_record_errors(result.failure)
+          end
+        end
+
         private
+
+        def find_event
+          Organization.find(params[:organization_id]).events.find(params[:id])
+        end
 
         def event_params
           event = params[:event]

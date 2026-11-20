@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Event < ApplicationRecord
-  STATUSES = %w[draft under_review published rejected cancelled].freeze
+  STATUSES = %w[draft under_review published rejected cancelled cancelled_by_organizer].freeze
   LOCATION_TYPES = %w[offline online].freeze
 
   belongs_to :organization
@@ -10,7 +10,9 @@ class Event < ApplicationRecord
   belongs_to :reviewed_by, class_name: 'User', optional: true
 
   has_many :event_translations, dependent: :destroy
+  has_many :event_media, class_name: 'EventMedia', dependent: :destroy
   has_many :ticket_types, dependent: :destroy
+  has_many :event_status_histories, dependent: :destroy
 
   validates :status, inclusion: { in: STATUSES }
   validates :location_type, inclusion: { in: LOCATION_TYPES }, allow_nil: true

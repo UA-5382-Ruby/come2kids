@@ -193,4 +193,35 @@ RSpec.describe 'Api::V1::Events', type: :request do
       end
     end
   end
+
+  describe 'GET /api/v1/events/:id' do
+    let(:organization) { create(:organization) }
+    let(:category) { create(:category) }
+    let(:event) do
+      e = create(:event, organization: organization, category: category)
+      create(:event_translation, event: e, title: 'Подія', description: 'Опис')
+      e
+    end
+
+    it 'returns published event details' do
+      get "/api/v1/events/#{event.id}", params: { locale: 'uk' }
+      expect(response).to have_http_status(:ok)
+      body = response.parsed_body
+      expect(body['title']).to eq('Подія')
+      expect(body['description']).to eq('Опис')
+      expect(body).to have_key('finished')
+      expect(body).to have_key('ticket_types')
+    end
+
+    it 'returns 404 for draft' do
+      draft = create(:event, :draft, organization: organization, category: category)
+      get "/api/v1/events/#{draft.id}"
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it 'returns 404 for missing id' do
+      get '/api/v1/events/0'
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

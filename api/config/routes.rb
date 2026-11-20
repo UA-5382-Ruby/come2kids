@@ -32,8 +32,6 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      # Логін поза namespace :auth, бо контролер на рівень вище
-      # Логін поза namespace :auth, бо контролер на рівень вище
       post "auth/login", to: "auth#login"
 
       namespace :auth do
@@ -44,10 +42,21 @@ Rails.application.routes.draw do
         post "reset-password", to: "reset_passwords#create"
       end
 
-      resources :events, only: [:index]
+      resources :events, only: [:index, :show]
+
+      resources :categories, only: [:index]
 
       resources :organizations, only: [:create] do
-        resources :events, only: [:create], module: :organizations
+        resources :events, only: %i[create update], module: :organizations do
+          member { post :submit }
+          resources :images, only: %i[create destroy] do
+            collection { patch :order }
+          end
+        end
+      end
+
+      resources :events, only: [] do
+        resources :orders, only: [:create]
       end
 
       if Rails.env.development?

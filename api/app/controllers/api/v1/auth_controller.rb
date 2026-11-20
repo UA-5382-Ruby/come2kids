@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-# Login (US-2.2). Returns a short-lived JWT access token in the body; there is no refresh token,
-# so the client logs in again when the token expires and "logs out" by discarding it.
 module Api
   module V1
     class AuthController < ApplicationController
@@ -11,15 +9,12 @@ module Api
       rate_limit to: 20, within: 1.minute, only: :login, name: 'login-by-ip',
         with: -> { render_too_many_requests }
 
-      # Login is public by design.
       skip_after_action :verify_authorized
 
       def login
         email = params[:email].to_s.strip.downcase
         password = params[:password].to_s
         return render_missing_credentials(email, password) if email.blank? || password.blank?
-
-        # authenticate_by takes the same time whether or not the email exists.
         user = User.authenticate_by(email: email, password: password)
         unless account_usable?(user)
           return render_error(code: Api::ErrorCodes::INVALID_CREDENTIALS, message: 'Invalid email or password',

@@ -18,6 +18,18 @@ module Api
       event.end_at&.utc&.iso8601(3)
     end
 
+    field :finished do |event|
+      event.end_at.present? && event.end_at < Time.current
+    end
+
+    view :detail do
+      field :description do |event|
+        translation = event.event_translations.find { |t| t.locale == I18n.locale.to_s }
+        translation&.description
+      end
+      association :ticket_types, blueprint: Api::TicketTypeBlueprint
+    end
+
     association :category, blueprint: Api::CategoryBlueprint
     association :organization, blueprint: Api::OrganizationBlueprint
 

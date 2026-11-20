@@ -15,6 +15,10 @@ FactoryBot.define do
       status { 'draft' }
     end
 
+    trait :published do
+      status { 'published' }
+    end
+
     trait :cancelled do
       status { 'cancelled' }
     end
