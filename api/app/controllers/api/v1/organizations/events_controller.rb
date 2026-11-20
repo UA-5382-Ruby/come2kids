@@ -55,6 +55,17 @@ module Api
           end
         end
 
+        def destroy
+          event = find_event
+          raise ActiveRecord::RecordNotFound if event.deleted_at.present?
+
+          authorize event, :destroy?
+          result = ::Events::DeleteOrCancel.call(event: event, actor: current_user)
+          return head :no_content if result.success?
+
+          render_record_errors(result.failure)
+        end
+
         private
 
         def find_event
