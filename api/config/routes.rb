@@ -88,7 +88,7 @@ Rails.application.routes.draw do
       end
 
       # Organization events (US-5.1)
-      resources :organizations, only: [] do
+      resources :organizations, only: [:create] do
         resources :events, only: %i[create update], module: :organizations do
           member { post :submit }
           resource :revision, only: :destroy
