@@ -274,6 +274,24 @@ RSpec.configure do |config|
             type: :object,
             properties: { data: { "$ref" => "#/components/schemas/eventRevision" } },
             required: %w[data]
+          },
+          participantTicket: {
+            type: :object,
+            properties: {
+              id: { type: :integer },
+              holder_name: { type: :string },
+              ticket_type_name: { type: :string, nullable: true },
+              check_in_state: { type: :string }
+            },
+            required: %w[id holder_name check_in_state]
+          },
+          participantPage: {
+            type: :object,
+            properties: {
+              data: { type: :array, items: { "$ref" => "#/components/schemas/participantTicket" } },
+              pagination: { type: :object }
+            },
+            required: %w[data pagination]
           }
         }
       }

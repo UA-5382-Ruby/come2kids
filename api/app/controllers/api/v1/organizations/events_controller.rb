@@ -6,6 +6,19 @@ module Api
       class EventsController < ApplicationController
         before_action :authenticate_user!
 
+        SORTABLE = { 'created' => 'events.created_at', 'date' => 'events.start_at' }.freeze
+
+        def index
+          organization = Organization.find(params[:organization_id])
+          authorize organization.events.build, :index?
+          reject_unknown_status
+
+          params[:sort] = 'created' if params[:sort].blank?
+          params[:direction] = 'desc' if params[:direction].blank? && params[:sort] == 'created'
+          records, pagination = paginate_collection(organizer_events(organization), sortable: SORTABLE, default_sort: 'created')
+          render_collection(records, blueprint: Api::EventBlueprint, pagination: pagination, view: :organizer)
+        end
+
         def create
           organization = Organization.find(params[:organization_id])
           event = organization.events.build
@@ -59,6 +72,26 @@ module Api
 
         def find_event
           Organization.find(params[:organization_id]).events.find(params[:id])
+        end
+
+        def organizer_events(organization)
+          relation = organization.events.includes(
+            :pending_revision, :event_translations, :ticket_types, :category,
+            organization: :organization_translations
+          )
+          relation = relation.where(deleted_at: nil) unless include_deleted?
+          relation = relation.where(status: params[:status]) if params[:status].present?
+          relation
+        end
+
+        def include_deleted?
+          ActiveModel::Type::Boolean.new.cast(params[:include_deleted])
+        end
+
+        def reject_unknown_status
+          return if params[:status].blank? || Event::STATUSES.include?(params[:status])
+
+          invalid_query_parameter(:status, 'is not a valid status')
         end
 
         def event_params
