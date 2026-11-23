@@ -60,3 +60,4 @@ en:
 
   organizations:
     requested: "Organization creation request has been submitted and is pending moderation."
+    updated: "Organization successfully updated."

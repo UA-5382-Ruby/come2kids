@@ -5,6 +5,8 @@ require 'faker'
 Faker::Config.locale = 'uk'
 
 puts "Cleaning database..."
+Appeal.delete_all
+ModerationLog.delete_all
 EventTranslation.delete_all
 OrganizationTranslation.delete_all
 Event.delete_all
@@ -245,10 +247,47 @@ attach_avatar(moderator, 'moderator_avatar.jpg')
 attach_avatar(owner, 'owner_avatar.jpg')
 attach_avatar(regular_user, 'regular_user_avatar.jpg')
 
+puts "Creating moderation queue samples (EPIC-6)..."
+pending_owner = User.find_or_create_by!(email: "pending-owner@demo.com") do |u|
+  u.first_name = "Ірина"
+  u.last_name = "Очікує"
+  u.password = "Owner12345"
+  u.platform_role = "user"
+  u.is_active = true
+  u.email_confirmed_at = Time.current
+end
+
+pending_org = Organization.find_or_create_by!(slug: "pending-kids-club") do |o|
+  o.contact_email = "hello@pending-kids-club.demo"
+  o.status = "pending_approval"
+  o.owner_user = pending_owner
+end
+
+OrganizationTranslation.find_or_create_by!(organization: pending_org, locale: "uk") do |t|
+  t.name = "Дитячий клуб (очікує схвалення)"
+  t.description = "Організація в черзі модерації"
+end
+
+review_event = Event.find_or_create_by!(organization: org, start_at: 1.month.from_now.beginning_of_day + 10.hours) do |e|
+  e.category = education_category
+  e.created_by = owner
+  e.end_at = e.start_at + 2.hours
+  e.location_type = "offline"
+  e.city = "Львів"
+  e.address = "пл. Ринок, 1"
+  e.status = "under_review"
+  e.submitted_at = Time.current
+end
+
+EventTranslation.find_or_create_by!(event: review_event, locale: "uk") do |t|
+  t.title = "Майстер-клас з робототехніки (на модерації)"
+  t.description = "Подія чекає рішення модератора"
+end
+
 puts "Seed data created successfully:"
 puts "Moderator: #{moderator.email}"
 puts "Demo Owner: #{owner.email}"
 puts "Demo User: #{regular_user.email}"
-puts "Organizations: #{Organization.count} (1 demo + 2 faker)"
-puts "Events: #{Event.count} (2 demo + 4 faker)"
+puts "Organizations: #{Organization.count} (1 demo + 2 faker + 1 pending approval)"
+puts "Events: #{Event.count} (2 demo + 4 faker + 1 under review)"
 puts "Categories: #{Category.count}"

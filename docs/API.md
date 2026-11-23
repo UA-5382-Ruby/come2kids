@@ -18,7 +18,8 @@ The foundational API skeleton has been successfully generated. Core directories 
 
 ## Error Responses
 
-API errors use the same JSON shape for every endpoint:
+API errors use the same JSON shape for every endpoint (one exception: `PUT /api/v1/users/me` answers an invalid profile
+with `422 { "errors": ["First name ..."] }`):
 
 ```json
 {
@@ -51,6 +52,12 @@ The initial error-code catalog is:
 | `TOKEN_EXPIRED` | 401 |
 | `EMAIL_NOT_CONFIRMED` | 403 |
 | `USER_BLOCKED` | 403 |
+| `INVALID_STATUS_TRANSITION` | 409 |
+| `CANNOT_BLOCK_MODERATOR` | 403 |
+| `NOT_BLOCKED` | 409 |
+| `APPEAL_ALREADY_OPEN` | 409 |
+| `APPEAL_COOLDOWN` | 429 |
+| `APPEAL_TOKEN_SCOPE` | 403 |
 
 ---
 
@@ -91,6 +98,82 @@ Timestamps are returned as UTC ISO 8601 strings with millisecond precision. Mone
 
 ---
 
+## Profile (US-2.5)
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/api/v1/users/me` | Profile of the current user (Bearer access token) |
+| PUT | `/api/v1/users/me` | Body `{ "user": { first_name, last_name, phone, birth_date, city, preferred_locale } }`; email cannot be changed |
+
+The profile endpoints moved from `/users/me` to `/api/v1/users/me` (`Api::V1::UsersController`), like every other
+endpoint; the old path no longer exists.
+
+---
+
+## Moderation, Blocking and Appeals (EPIC-6)
+
+All `/api/v1/moderation/*` endpoints require a moderator access token (others get `403 FORBIDDEN`, guests `401`).
+Every decision is stored in `moderation_logs` (who, when, decision, reason), written to the activity log
+(asynchronously, `ActivityLogJob`) and emailed to the affected person in their preferred language (`uk`/`en`).
+A reason is required wherever a decision says "reason" below; a missing reason returns
+`422 VALIDATION_FAILED` with `details: [{ "field": "reason" }]`. Deciding on an item in the wrong status returns
+`409 INVALID_STATUS_TRANSITION`.
+
+| Method | Path | Body | Notes |
+| --- | --- | --- | --- |
+| GET | `/moderation/organizations?status=pending_approval` | | Queue. `status`: any organization status, `pending` (alias) or `all`. Filter `city`; sort `created_at`, `updated_at` |
+| POST | `/moderation/organizations/{id}/approve` | | `pending_approval → approved`; owner is emailed |
+| POST | `/moderation/organizations/{id}/reject` | `reason` | `pending_approval → rejected` |
+| POST | `/moderation/organizations/{id}/block` | `reason` | Organization and its events are hidden, ticket sales stop, staff cannot create or edit events. Sold tickets stay valid |
+| POST | `/moderation/organizations/{id}/unblock` | `reason` (optional) | Back to `approved` (or `pending_approval` if it was never approved); an open appeal is closed |
+| GET | `/moderation/events?status=under_review` | | Queue of new events with all translations. Filters `organization_id`, `category_id`; sort `submitted_at`, `created_at`, `start_at` |
+| POST | `/moderation/events/{id}/approve` | | `under_review → published`; only for an approved organization; creator is emailed |
+| POST | `/moderation/events/{id}/reject` | `reason` | `under_review → rejected` |
+| POST | `/moderation/users/{id}/block` | `reason` | The user's tokens stop working at once; moderators cannot be blocked (`CANNOT_BLOCK_MODERATOR`) |
+| POST | `/moderation/users/{id}/unblock` | `reason` (optional) | Restores access; an open appeal is closed |
+| GET | `/moderation/appeals?status=open` | | Appeal queue (users and organizations), with the target, its block reason and `blocked_by_id`. Filter `target_type` |
+| GET | `/moderation/appeals/{id}` | | One appeal |
+| POST | `/moderation/appeals/{id}/accept` | `reason` (optional) | Unblocks the user or restores the organization to `approved` |
+| POST | `/moderation/appeals/{id}/reject` | `reason` | The block stays; a new appeal is possible 24 hours later |
+| GET | `/moderation/logs` | | Moderation decisions. Filters `entity_type`, `entity_id`, `moderator_id`, `decision` |
+
+Unblocking a user or an organization with `/unblock` also closes its open appeal as accepted.
+
+### Appeals
+
+A blocked user who logs in with correct credentials gets `403 USER_BLOCKED` with the block reason and an appeal
+token (valid 24 hours, `JWT_APPEAL_TTL`):
+
+```json
+{
+  "code": "USER_BLOCKED",
+  "message": "Your account has been blocked.",
+  "details": [{ "field": "block_reason", "message": "Spam" }],
+  "appeal_token": "eyJ...",
+  "appeal_token_expires_in": 86400
+}
+```
+
+The appeal token works only for the endpoints below; any other endpoint answers `403 APPEAL_TOKEN_SCOPE`.
+The owner of a blocked organization is not blocked, so they use a normal access token and pass `organization_id`.
+Managers cannot appeal.
+
+| Method | Path | Body / query | Notes |
+| --- | --- | --- | --- |
+| POST | `/appeals` | `message` (1–2000 chars), `organization_id` (organization appeals) | `201` with the appeal. `409 NOT_BLOCKED`, `409 APPEAL_ALREADY_OPEN`, or `429 APPEAL_COOLDOWN` with `details: [{ "field": "next_appeal_allowed_at", "message": "<ISO 8601>" }]` |
+| GET | `/appeals/current` | `organization_id` (optional) | Block state, the latest appeal with its decision, `can_submit` and `next_appeal_allowed_at` |
+
+### Enforcement helpers for other features
+
+- `Organization.publicly_visible` and `Event.publicly_visible` hide blocked, pending and rejected organizations and
+  their events. Public catalogs (EPIC-3, EPIC-4) must build on these scopes.
+- `Event#ticket_sales_open?` is false while the organization is blocked; the order flow (EPIC-7) must check it.
+- `Organization#accepts_event_changes?` is false while the organization is not approved; event create/edit
+  policies (EPIC-5) must check it.
+- A blocked user cannot authenticate, so they cannot buy tickets, write reviews or ask questions.
+
+---
+
 ## OpenAPI Documentation
 
 Swagger UI is available at `/api-docs`. The OpenAPI document is generated from request specs with:
@@ -100,13 +183,60 @@ cd api
 bundle exec rake rswag:specs:swaggerize
 ```
 
-The generated v1 document is served at `/api-docs/v1/swagger.yaml`. New endpoints should add an RSpec file under `spec/requests/` and describe their parameters, response schemas, and documented error responses there.
+The generated v1 document is served at `/api-docs/v1/swagger.yaml`. `api/swagger/` is git-ignored, so run the command
+after pulling. Generation uses `--dry-run` (no requests are sent), but it still loads `rails_helper`, which checks the
+test database schema, so PostgreSQL must be running and the test database prepared (`bin/rails db:test:prepare`).
+
+The document lists two servers: `/` (the host Swagger UI was opened from, so "Try it out" works on `localhost`,
+`127.0.0.1` and `0.0.0.0` without CORS) and `http://{host}:{port}` to target a host explicitly. Protected endpoints use
+the **Authorize** button (`bearerAuth`): paste the access token or, for the appeal endpoints, the appeal token.
+
+### Writing request specs
+
+Every endpoint is described by a request spec in `spec/requests/` written with the rswag DSL, so it is tested and
+documented at the same time:
+
+```ruby
+require 'swagger_helper'
+
+RSpec.describe 'Auth: login', type: :request do
+  path '/api/v1/auth/login' do
+    post 'Log in with email and password' do
+      tags 'Auth'
+      consumes 'application/json'
+      produces 'application/json'
+      parameter name: :credentials, in: :body, schema: { type: :object, required: %w[email password] }
+
+      response '401', 'invalid credentials' do
+        schema '$ref' => '#/components/schemas/error'
+        let(:credentials) { { email: 'nobody@example.com', password: 'wrong-pass1' } }
+
+        run_test! { expect(json['code']).to eq('INVALID_CREDENTIALS') }
+      end
+    end
+  end
+end
+```
+
+Conventions:
+
+- `run_test!` sends the request in a `before` hook that applies to the whole group, so a group that has `run_test!`
+  must not contain other examples or nested groups. Put each `run_test!` in its own `context`.
+- To wrap the request in `expect { }`, call `send_documented_request` (from `spec/support/swagger_helpers.rb`) inside
+  an `it`: `expect { send_documented_request }.to have_enqueued_mail(UserMailer, :confirmation)`.
+- Header and camelCase query parameters use a snake_case getter, e.g.
+  `parameter name: 'Authorization', in: :header, type: :string, required: false, getter: :authorization` with
+  `let(:authorization) { "Bearer #{token}" }`. Use the string name `'Authorization'`, so rswag merges it with the
+  header derived from `security [bearerAuth: []]`.
+- Reusable response schemas (`error`, `pagination`, `user_profile`, `appeal`, ...) live in `spec/swagger_helper.rb`.
 
 ---
 
 ## CORS
 
-Browser access is limited to the origins listed in `FRONTEND_ORIGINS`. The value is comma-separated and must include the complete origin, including scheme and port where applicable. The API accepts JSON requests and the `Authorization` and `Idempotency-Key` headers. Production does not permit wildcard origins.
+Browser access is limited to the origins listed in `FRONTEND_ORIGINS`. Without it, development and test allow
+`http://localhost`, `http://127.0.0.1` and `http://0.0.0.0` on port `PORT` (default 3000, the API and Swagger UI) and
+on 5173 (the frontend). The value is comma-separated and must include the complete origin, including scheme and port where applicable. The API accepts JSON requests and the `Authorization` and `Idempotency-Key` headers. Production does not permit wildcard origins.
 
 ---
 

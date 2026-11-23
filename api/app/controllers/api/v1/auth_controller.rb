@@ -24,7 +24,8 @@ module Api
           return render_error(code: Api::ErrorCodes::EMAIL_NOT_CONFIRMED, message: 'Please confirm your email first',
             status: :forbidden)
         end
-        return render_user_blocked(user) if user.blocked_at.present?
+        # FR-APP-1: correct credentials of a blocked user return 403 with an appeal token.
+        return render_user_blocked(user, appeal_token: JwtService.encode_appeal(user)) if user.blocked?
 
         render json: {
           access_token: JwtService.encode(user),

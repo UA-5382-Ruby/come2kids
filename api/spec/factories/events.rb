@@ -33,5 +33,23 @@ FactoryBot.define do
       start_at { 1.week.ago }
       end_at { 1.week.ago + 2.hours }
     end
+
+    trait :published do
+      status { 'published' }
+      published_at { 1.day.ago }
+    end
+
+    trait :under_review do
+      status { 'under_review' }
+      submitted_at { 1.hour.ago }
+    end
+
+    # Ukrainian and English titles, as moderators review every language version.
+    trait :with_translations do
+      after(:create) do |event|
+        create(:event_translation, event: event, title: 'Табір програмування')
+        create(:event_translation, :en, event: event, title: 'Programming camp')
+      end
+    end
   end
 end

@@ -65,7 +65,7 @@ Key variables (see the templates for the full list):
 | `MAIL_FROM` | Default From: address | `noreply@come2kids.local` |
 | `SMTP_*` | Production SMTP settings | see `.env.example` |
 | `SIDEKIQ_USERNAME` / `SIDEKIQ_PASSWORD` | HTTP Basic for `/sidekiq` | optional locally |
-| `FRONTEND_ORIGINS` | CORS allowlist | `http://localhost:3000` |
+| `FRONTEND_ORIGINS` | CORS allowlist | localhost, 127.0.0.1 and 0.0.0.0 on ports 3000 and 5173 (non-production) |
 | `SECRET_KEY_BASE` | Required in production / Compose | long random hex |
 
 ```bash
@@ -105,7 +105,7 @@ FRONTEND_ORIGINS=http://localhost:3000
 FRONTEND_ORIGINS=https://app.example.com,https://admin.example.com
 ```
 
-In development, the default is `http://localhost:3000` when the variable is omitted. Production requires `FRONTEND_ORIGINS`; wildcard origins are not supported.
+In development and test, when the variable is omitted, the default allows `localhost`, `127.0.0.1` and `0.0.0.0` on port `PORT` (default 3000: the API and Swagger UI) and on 5173 (the frontend). Production requires `FRONTEND_ORIGINS`; wildcard origins are not supported.
 
 ---
 

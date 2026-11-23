@@ -39,5 +39,17 @@ module Api
       association :event_translations, blueprint: Api::EventTranslationBlueprint
       association :ticket_types, blueprint: Api::TicketTypeBlueprint
     end
+
+    view :organizer do
+      include_view :managed
+
+      field :deleted_at do |event|
+        event.deleted_at&.utc&.iso8601(3)
+      end
+
+      field :pending_revision do |event|
+        event.pending_revision.present?
+      end
+    end
   end
 end

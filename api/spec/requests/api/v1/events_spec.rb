@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rails_helper'
+require 'swagger_helper'
 
-RSpec.describe 'Api::V1::Events', type: :request do
+RSpec.describe 'Events: public catalog', type: :request do
   let(:organization) { create(:organization) }
   let(:category) { create(:category) }
 
@@ -12,184 +12,173 @@ RSpec.describe 'Api::V1::Events', type: :request do
     event
   end
 
-  def get_events(params = {})
-    get '/api/v1/events', params: params
-  end
+  path '/api/v1/events' do
+    get 'List published events' do
+      tags 'Events'
+      description 'Only published events of approved organizations; events of blocked organizations are hidden.'
+      produces 'application/json'
+      parameter name: :q, in: :query, type: :string, required: false, description: 'Search in the title'
+      parameter name: :locale, in: :query, type: :string, required: false, description: 'uk (default) or en'
+      parameter name: :category_id, in: :query, type: :integer, required: false
+      parameter name: :city, in: :query, type: :string, required: false
+      parameter name: :organization_id, in: :query, type: :integer, required: false
+      parameter name: :location_type, in: :query, type: :string, required: false, enum: Event::LOCATION_TYPES
+      parameter name: :date_from, in: :query, type: :string, format: 'date-time', required: false
+      parameter name: :date_to, in: :query, type: :string, format: 'date-time', required: false
+      parameter name: :sort, in: :query, type: :string, required: false, enum: %w[date created]
+      parameter name: :direction, in: :query, type: :string, required: false, enum: %w[asc desc]
+      parameter name: :page, in: :query, type: :integer, required: false
+      parameter name: :pageSize, in: :query, type: :integer, required: false, getter: :page_size, description: 'Up to 100'
 
-  describe 'GET /api/v1/events' do
-    context 'when catalog is empty' do
-      before { get_events }
+      response '200', 'events' do
+        schema type: :object,
+               properties: {
+                 data: {
+                   type: :array,
+                   items: {
+                     type: :object,
+                     properties: {
+                       id: { type: :integer },
+                       title: { type: :string, nullable: true },
+                       status: { type: :string },
+                       start_at: { type: :string, format: 'date-time', nullable: true },
+                       category: { type: :object, nullable: true },
+                       organization: { type: :object }
+                     }
+                   }
+                 },
+                 pagination: { '$ref' => '#/components/schemas/pagination' }
+               },
+               required: %w[data pagination]
 
-      it 'returns ok' do
-        expect(response).to have_http_status(:ok)
+        context 'when the catalog is empty' do
+          run_test! { expect(json['data']).to eq([]) }
+        end
+
+        context 'when statuses are mixed' do
+          let!(:visible) { publish_event }
+
+          before do
+            create(:event, :draft, organization: organization)
+            create(:event, :cancelled, organization: organization)
+            blocked = create(:organization, status: 'blocked', blocked_at: Time.current, block_reason: 'spam')
+            create(:event, organization: blocked)
+          end
+
+          run_test!('returns only published events of approved organizations') do
+            expect(json['data'].pluck('id')).to eq([ visible.id ])
+          end
+        end
+
+        context 'with a category filter' do
+          let(:category_id) { category.id }
+          let!(:matching) { publish_event }
+
+          before { publish_event(category: create(:category)) }
+
+          run_test! { expect(json['data'].pluck('id')).to eq([ matching.id ]) }
+        end
+
+        context 'with a city filter' do
+          let(:city) { 'Lviv' }
+          let!(:matching) { publish_event(city: 'Lviv') }
+
+          before { publish_event(city: 'Kyiv') }
+
+          run_test! { expect(json['data'].pluck('id')).to eq([ matching.id ]) }
+        end
+
+        context 'with location_type=online' do
+          let(:location_type) { 'online' }
+          let!(:matching) do
+            create(:event, :online, organization: organization, category: category)
+              .tap { |online| create(:event_translation, event: online) }
+          end
+
+          before { publish_event }
+
+          run_test! { expect(json['data'].pluck('id')).to eq([ matching.id ]) }
+        end
+
+        context 'with date_from' do
+          let(:date_from) { 5.days.from_now.iso8601 }
+          let!(:matching) { publish_event(start_at: 10.days.from_now, end_at: 10.days.from_now + 2.hours) }
+
+          before { publish_event(start_at: 2.days.from_now, end_at: 2.days.from_now + 2.hours) }
+
+          run_test! { expect(json['data'].pluck('id')).to eq([ matching.id ]) }
+        end
+
+        context 'with a Ukrainian text search' do
+          let(:q) { 'малювання' }
+          let(:locale) { 'uk' }
+
+          let!(:matching) do
+            create(:event, organization: organization, category: category)
+              .tap { |event| create(:event_translation, event: event, title: 'Майстер-клас з малювання') }
+          end
+
+          before { publish_event }
+
+          run_test! { expect(json['data'].pluck('id')).to eq([ matching.id ]) }
+        end
+
+        context 'with an English text search' do
+          let(:q) { 'Painting' }
+          let(:locale) { 'en' }
+
+          let!(:matching) do
+            publish_event.tap { |event| create(:event_translation, :en, event: event, title: 'Painting workshop') }
+          end
+
+          before { publish_event }
+
+          run_test! { expect(json['data'].pluck('id')).to eq([ matching.id ]) }
+        end
+
+        context 'with sort=date and direction=desc' do
+          let(:sort) { 'date' }
+          let(:direction) { 'desc' }
+
+          before do
+            publish_event(start_at: 1.day.from_now, end_at: 1.day.from_now + 2.hours)
+            publish_event(start_at: 3.days.from_now, end_at: 3.days.from_now + 2.hours)
+          end
+
+          run_test! do
+            expect(json['data'].first['start_at'] > json['data'].last['start_at']).to be(true)
+          end
+        end
+
+        context 'with pagination' do
+          let(:page_size) { 2 }
+          let(:page) { 1 }
+
+          before { 3.times { publish_event } }
+
+          run_test! do
+            expect(json['data'].size).to eq(2)
+            expect(json['pagination']).to include('totalCount' => 3, 'totalPages' => 2)
+          end
+        end
       end
 
-      it 'returns empty data' do
-        expect(response.parsed_body['data']).to eq([])
-      end
-    end
+      response '400', 'invalid query parameters' do
+        schema '$ref' => '#/components/schemas/error'
 
-    context 'when statuses are mixed' do
-      before do
-        publish_event
-        create(:event, :draft, organization: organization)
-        create(:event, :cancelled, organization: organization)
-        blocked = create(:organization, status: 'blocked', blocked_at: Time.current, block_reason: 'spam')
-        create(:event, organization: blocked)
-        get_events
-      end
+        {
+          'an oversized page size' => { page_size: 999 },
+          'an unknown sort column' => { sort: 'password' },
+          'an invalid direction' => { direction: 'sideways' },
+          'an invalid date' => { date_from: 'not-a-date' },
+          'an invalid location type' => { location_type: 'hybrid' }
+        }.each do |label, query|
+          context "with #{label}" do
+            query.each { |name, value| let(name) { value } }
 
-      it 'returns only published approved events' do
-        expect(response.parsed_body['data'].size).to eq(1)
-      end
-    end
-
-    context 'with category filter' do
-      let(:other_category) { create(:category) }
-
-      before do
-        publish_event
-        publish_event(category: other_category)
-        get_events(category_id: category.id)
-      end
-
-      it 'returns matching category only' do
-        expect(response.parsed_body['data'].size).to eq(1)
-      end
-    end
-
-    context 'with city filter' do
-      before do
-        publish_event(city: 'Kyiv')
-        publish_event(city: 'Lviv')
-        get_events(city: 'Lviv')
-      end
-
-      it 'returns matching city only' do
-        expect(response.parsed_body['data'].size).to eq(1)
-      end
-    end
-
-    context 'with online filter' do
-      before do
-        publish_event
-        online = create(:event, :online, organization: organization, category: category)
-        create(:event_translation, event: online)
-        get_events(location_type: 'online')
-      end
-
-      it 'returns online events only' do
-        expect(response.parsed_body['data'].size).to eq(1)
-      end
-    end
-
-    context 'with date range' do
-      before do
-        publish_event(start_at: 2.days.from_now, end_at: 2.days.from_now + 2.hours)
-        publish_event(start_at: 10.days.from_now, end_at: 10.days.from_now + 2.hours)
-        get_events(date_from: 5.days.from_now.iso8601)
-      end
-
-      it 'returns events after date_from' do
-        expect(response.parsed_body['data'].size).to eq(1)
-      end
-    end
-
-    context 'with text search' do
-      before do
-        event = create(:event, organization: organization, category: category)
-        create(:event_translation, event: event, title: 'Майстер-клас з малювання')
-        publish_event
-        get_events(q: 'малювання', locale: 'uk')
-      end
-
-      it 'returns matching events' do
-        expect(response.parsed_body['data'].size).to eq(1)
-      end
-    end
-
-    context 'with english locale search' do
-      before do
-        target = publish_event
-        create(:event_translation, :en, event: target, title: 'Painting workshop')
-        publish_event
-        get_events(q: 'Painting', locale: 'en')
-      end
-
-      it 'returns matching english events' do
-        expect(response.parsed_body['data'].size).to eq(1)
-      end
-    end
-
-    context 'with descending sort' do
-      before do
-        publish_event(start_at: 1.day.from_now, end_at: 1.day.from_now + 2.hours)
-        publish_event(start_at: 3.days.from_now, end_at: 3.days.from_now + 2.hours)
-        get_events(sort: 'date', direction: 'desc')
-      end
-
-      it 'returns later event first' do
-        data = response.parsed_body['data']
-        expect(data.first['start_at'] > data.last['start_at']).to be(true)
-      end
-    end
-
-    context 'with pagination' do
-      before do
-        3.times { publish_event }
-        get_events(pageSize: 2, page: 1)
-      end
-
-      it 'returns requested page size' do
-        expect(response.parsed_body['data'].size).to eq(2)
-      end
-
-      it 'returns total count' do
-        expect(response.parsed_body['pagination']['totalCount']).to eq(3)
-      end
-
-      it 'returns total pages' do
-        expect(response.parsed_body['pagination']['totalPages']).to eq(2)
-      end
-    end
-
-    context 'with oversized page size' do
-      before { get_events(pageSize: 999) }
-
-      it 'returns bad request' do
-        expect(response).to have_http_status(:bad_request)
-      end
-    end
-
-    context 'with unknown sort column' do
-      before { get_events(sort: 'password') }
-
-      it 'returns bad request' do
-        expect(response).to have_http_status(:bad_request)
-      end
-    end
-
-    context 'with invalid direction' do
-      before { get_events(direction: 'sideways') }
-
-      it 'returns bad request' do
-        expect(response).to have_http_status(:bad_request)
-      end
-    end
-
-    context 'with invalid date' do
-      before { get_events(date_from: 'not-a-date') }
-
-      it 'returns bad request' do
-        expect(response).to have_http_status(:bad_request)
-      end
-    end
-
-    context 'with invalid location type' do
-      before { get_events(location_type: 'hybrid') }
-
-      it 'returns bad request' do
-        expect(response).to have_http_status(:bad_request)
+            run_test! { expect(json['code']).to eq('BAD_REQUEST') }
+          end
+        end
       end
     end
   end

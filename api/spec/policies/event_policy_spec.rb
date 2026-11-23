@@ -57,7 +57,16 @@ RSpec.describe EventPolicy do
       end
     end
 
-    context "when the organization is blocked" do
+    context 'when the organization is soft-deleted' do
+      let(:organization) { create(:organization, deleted_at: Time.current) }
+      let(:user) { create(:company_member, :owner, organization: organization).user }
+
+      it 'denies the draft' do
+        expect(policy.create?).to be(false)
+      end
+    end
+
+    context 'when the organization is blocked' do
       let(:organization) do
         create(:organization, status: "blocked", approved_at: nil, blocked_at: Time.current, block_reason: "spam")
       end
@@ -156,6 +165,21 @@ RSpec.describe EventPolicy do
       stranger = described_class.new(create(:user), event)
 
       expect(stranger.submit?).to be(false)
+    end
+  end
+
+  describe "#revise?" do
+    let(:event) { build(:event, organization: organization, status: "published") }
+    let(:user) { create(:company_member, :owner, organization: organization).user }
+
+    it "allows an owner to revise a published event" do
+      expect(policy.revise?).to be(true)
+    end
+
+    it "denies a revision of a draft" do
+      event.status = "draft"
+
+      expect(policy.revise?).to be(false)
     end
   end
 end

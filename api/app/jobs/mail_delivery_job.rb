@@ -8,6 +8,8 @@ class MailDeliveryJob < ActionMailer::MailDeliveryJob
 
 
   queue_as :mailers
+  # Mailer arguments include raw confirmation/reset tokens and moderation reasons; never log them.
+  self.log_arguments = false
 
   def failure_log_action
     'email.delivery_failed'

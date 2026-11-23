@@ -16,7 +16,7 @@ Welcome to the **Come2Kids** project documentation hub. This directory contains 
 * **[Database Notes](Database.md)** — PostgreSQL setup, common Rails database commands, schema management, migrations, and troubleshooting.
 
 ### API
-* **[API Summary](API.md)** — Overview of the Rails API application, how to run it, testing endpoints, and future Swagger documentation plans.
+* **[API Summary](API.md)** — Overview of the Rails API application, how to run it, the Swagger (rswag) documentation and how to write request specs.
 
 ### Project Management
 * **[User Stories](UserStories.md)** — How user stories are defined, tracked, and implemented. Includes templates, examples, and priority levels.

@@ -1,118 +1,135 @@
 # frozen_string_literal: true
 
-require "rails_helper"
 require 'swagger_helper'
 
-RSpec.describe "Api::V1::Auth", type: :request do
+RSpec.describe 'Auth: login', type: :request do
   let(:user) { create(:user) }
-  let(:password) { "Password123" }
+  let(:password) { 'Password123' }
   let(:json) { response.parsed_body }
 
   # Rate limits live in Rails.cache; start every example with a clean counter.
   before { Rails.cache.clear }
 
-  def login(email: user.email, password: self.password)
-    post api_v1_auth_login_path, params: { email: email, password: password }, as: :json
-  end
+  path '/api/v1/auth/login' do
+    post 'Log in with email and password' do
+      tags 'Auth'
+      description 'Returns a short-lived JWT access token. There is no refresh token: the client logs in again ' \
+                  'when it expires. A blocked user gets 403 USER_BLOCKED with an appeal token (FR-APP-1).'
+      consumes 'application/json'
+      produces 'application/json'
+      parameter name: :credentials, in: :body, schema: {
+        type: :object,
+        properties: {
+          email: { type: :string, format: :email, example: 'user@demo.com' },
+          password: { type: :string, example: 'User12345' }
+        },
+        required: %w[email password]
+      }
 
-  describe "POST /api/v1/auth/login" do
-    context "with valid credentials" do
-      before { login }
+      let(:credentials) { { email: user.email, password: password } }
 
-      it "returns a Bearer access token for the user" do
-        expect(response).to have_http_status(:ok)
-        expect(json).to include("token_type" => "Bearer", "expires_in" => JwtService::ACCESS_TTL.to_i)
-        expect(JwtService.decode(json["access_token"])["sub"]).to eq(user.id.to_s)
+      response '200', 'access token issued' do
+        schema type: :object,
+               properties: {
+                 access_token: { type: :string },
+                 token_type: { type: :string, example: 'Bearer' },
+                 expires_in: { type: :integer, example: 900 }
+               },
+               required: %w[access_token token_type expires_in]
+
+        context 'with valid credentials' do
+          run_test! do
+            expect(json).to include('token_type' => 'Bearer', 'expires_in' => JwtService::ACCESS_TTL.to_i)
+            expect(JwtService.decode(json['access_token'])['sub']).to eq(user.id.to_s)
+            expect(json.keys).to contain_exactly('access_token', 'token_type', 'expires_in')
+            expect(response.headers['Set-Cookie']).to be_blank
+          end
+        end
+
+        context 'when the email is in another case' do
+          let(:credentials) { { email: user.email.upcase, password: password } }
+
+          run_test!
+        end
       end
 
-      it "returns no refresh token and sets no cookie" do
-        expect(json.keys).to contain_exactly("access_token", "token_type", "expires_in")
-        expect(response.headers["Set-Cookie"]).to be_blank
+      response '401', 'invalid credentials' do
+        schema '$ref' => '#/components/schemas/error'
+
+        context 'with a wrong password' do
+          let(:password) { 'wrong-pass1' }
+
+          run_test! { expect(json['code']).to eq('INVALID_CREDENTIALS') }
+        end
+
+        context 'with an unknown email (same error, no account enumeration)' do
+          let(:credentials) { { email: 'nobody@example.com', password: password } }
+
+          run_test! { expect(json['code']).to eq('INVALID_CREDENTIALS') }
+        end
+
+        { 'soft-deleted' => { deleted_at: Time.current }, 'inactive' => { is_active: false } }.each do |state, attrs|
+          context "when the account is #{state}" do
+            let(:user) { create(:user, **attrs) }
+
+            run_test! { expect(json['code']).to eq('INVALID_CREDENTIALS') }
+          end
+        end
       end
-    end
 
-    it "accepts the email in any case" do
-      login(email: user.email.upcase)
+      response '403', 'email not confirmed or user blocked' do
+        schema '$ref' => '#/components/schemas/error'
 
-      expect(response).to have_http_status(:ok)
-    end
+        context 'when the email is not confirmed' do
+          let(:user) { create(:user, :unconfirmed) }
 
-    it "rejects a wrong password" do
-      login(password: "wrong-pass1")
+          run_test! { expect(json['code']).to eq('EMAIL_NOT_CONFIRMED') }
+        end
 
-      expect(response).to have_http_status(:unauthorized)
-      expect(json["code"]).to eq("INVALID_CREDENTIALS")
-    end
+        context 'when the user is blocked' do
+          let(:user) { create(:user, :blocked) }
 
-    it "gives the same error for an unknown email" do
-      login(email: "nobody@example.com")
-
-      expect(response).to have_http_status(:unauthorized)
-      expect(json["code"]).to eq("INVALID_CREDENTIALS")
-    end
-
-    it "requires email and password" do
-      post api_v1_auth_login_path, params: {}, as: :json
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(json["code"]).to eq("VALIDATION_FAILED")
-      expect(json["details"].pluck("field")).to eq(%w[email password])
-    end
-
-    context "when the email is not confirmed" do
-      let(:user) { create(:user, :unconfirmed) }
-
-      it "returns EMAIL_NOT_CONFIRMED" do
-        login
-
-        expect(response).to have_http_status(:forbidden)
-        expect(json["code"]).to eq("EMAIL_NOT_CONFIRMED")
+          run_test! do
+            expect(json['code']).to eq('USER_BLOCKED')
+            expect(json['details'].first['message']).to eq('Spam')
+            expect(json).not_to have_key('access_token')
+            expect(JwtService.decode(json['appeal_token'])['scope']).to eq('appeal')
+          end
+        end
       end
-    end
 
-    { "soft-deleted" => { deleted_at: Time.current }, "inactive" => { is_active: false } }.each do |state, attributes|
-      context "when the account is #{state}" do
-        let(:user) { create(:user, **attributes) }
+      response '422', 'email or password missing' do
+        schema '$ref' => '#/components/schemas/error'
 
-        it "returns INVALID_CREDENTIALS" do
-          login
+        let(:credentials) { {} }
 
-          expect(response).to have_http_status(:unauthorized)
-          expect(json["code"]).to eq("INVALID_CREDENTIALS")
+        run_test! do
+          expect(json['code']).to eq('VALIDATION_FAILED')
+          expect(json['details'].pluck('field')).to eq(%w[email password])
+        end
+      end
+
+      response '429', 'too many attempts' do
+        schema '$ref' => '#/components/schemas/error'
+
+        context 'when one email was tried five times' do
+          before { 5.times { post '/api/v1/auth/login', params: { email: user.email, password: 'x1' }, as: :json } }
+
+          run_test! { expect(json['code']).to eq('TOO_MANY_REQUESTS') }
+        end
+
+        context 'when one IP made twenty attempts, even for different emails' do
+          before do
+            20.times { |i| post '/api/v1/auth/login', params: { email: "probe#{i}@example.com" }, as: :json }
+          end
+
+          run_test!
         end
       end
     end
-
-    context "when the user is blocked" do
-      let(:user) { create(:user, :blocked) }
-
-      it "returns USER_BLOCKED with the reason and no access token" do
-        login
-
-        expect(response).to have_http_status(:forbidden)
-        expect(json["code"]).to eq("USER_BLOCKED")
-        expect(json["details"].first["message"]).to eq("Spam")
-        expect(json).not_to have_key("access_token")
-      end
-    end
-
-    it "is rate limited after five attempts" do
-      5.times { login(password: "wrong-pass1") }
-      login
-
-      expect(response).to have_http_status(:too_many_requests)
-      expect(json["code"]).to eq("TOO_MANY_REQUESTS")
-    end
-
-    it "is rate limited per IP even when the email changes" do
-      20.times { |i| login(email: "probe#{i}@example.com") }
-      login
-
-      expect(response).to have_http_status(:too_many_requests)
-    end
   end
 
-  it "has no refresh or logout endpoints" do
+  it 'has no refresh or logout endpoints' do
     expect(Rails.application.routes.url_helpers).not_to respond_to(:api_v1_auth_refresh_path)
     expect(Rails.application.routes.url_helpers).not_to respond_to(:api_v1_auth_logout_path)
   end

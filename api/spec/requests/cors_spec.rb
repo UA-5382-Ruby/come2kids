@@ -9,7 +9,7 @@ RSpec.describe "CORS", type: :request do
       .filter_map(&:strip)
       .reject(&:empty?)
 
-      configured_origins.first || "http://localhost:3000"
+      configured_origins.first || "http://localhost:#{ENV.fetch("PORT", "3000")}"
   end
 
   it "allows the configured frontend origin" do
@@ -18,6 +18,17 @@ RSpec.describe "CORS", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.headers["Access-Control-Allow-Origin"]).to eq(frontend_origin)
     expect(response.headers["Access-Control-Allow-Credentials"]).to be_nil
+  end
+
+  context "without FRONTEND_ORIGINS (development defaults)", if: ENV["FRONTEND_ORIGINS"].blank? do
+    api_port = ENV.fetch("PORT", "3000")
+    (%w[localhost 127.0.0.1 0.0.0.0].map { |host| "http://#{host}:#{api_port}" } + [ "http://127.0.0.1:5173" ]).each do |origin|
+      it "allows #{origin}" do
+        get "/up", headers: { "Origin" => origin }
+
+        expect(response.headers["Access-Control-Allow-Origin"]).to eq(origin)
+      end
+    end
   end
 
   it "does not grant access to an unconfigured origin" do

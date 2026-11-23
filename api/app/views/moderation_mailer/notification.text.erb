@@ -1,0 +1,12 @@
+<%= t("moderation_mailer.greeting", name: @recipient.first_name) %>
+
+<%= @heading %>
+
+<%= @body %>
+<% if @reason %>
+
+<%= t("moderation_mailer.reason_label") %>
+<%= @reason %>
+<% end %>
+
+<%= t("moderation_mailer.signature") %>

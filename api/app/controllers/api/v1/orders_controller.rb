@@ -5,6 +5,25 @@ module Api
     class OrdersController < ApplicationController
       before_action :authenticate_user!
 
+      def my
+        authorize Order
+        orders, pagination = paginate_collection(
+          Order.where(user: current_user).includes(tickets: :ticket_type),
+          sortable: { created_at: :created_at, status: :status },
+          filterable: { status: :status },
+          default_sort: :created_at
+        )
+
+        render_collection orders, blueprint: Api::OrderBlueprint, pagination: pagination
+      end
+
+      def show
+        order = Order.includes(tickets: :ticket_type).find(params[:id])
+        authorize order
+
+        render_resource order, blueprint: Api::OrderBlueprint
+      end
+
       def create
         authorize Order
         if request.headers['Idempotency-Key'].blank?

@@ -57,7 +57,7 @@ RSpec.describe OrderCreationService, type: :service do
     end
 
     context 'with valid paid ticket reservation' do
-      it 'creates a pending order with 15-minute reservation' do
+      it 'creates a pending order with 15-minute reservation and no tickets' do
         expect { call_service }
           .to change(Order, :count).by(1)
           .and change(OrderItem, :count).by(1)
@@ -68,17 +68,44 @@ RSpec.describe OrderCreationService, type: :service do
         expect(order.total_amount).to eq(500)
         expect(order.currency).to eq('UAH')
         expect(order.reserved_until).to be_within(5.seconds).of(15.minutes.from_now)
+        expect(order.tickets).to be_empty
       end
     end
 
     context 'with free tickets (price = 0)' do
+      let(:free_ticket) do
+        create(:ticket_type, event: event, price: 0, total_quantity: 10, sold_quantity: 0)
+      end
+
       it 'creates a paid order without reserved_until' do
-        free_ticket = create(:ticket_type, event: event, price: 0, total_quantity: 10, sold_quantity: 0)
-        order = call_service(target_ticket: free_ticket)
+        order = call_service(quantity: 3, target_ticket: free_ticket)
 
         expect(order).to be_paid
         expect(order.total_amount).to eq(0)
         expect(order.reserved_until).to be_nil
+      end
+
+      it 'issues unique valid tickets immediately' do
+        order = nil
+
+        expect { order = call_service(quantity: 3, target_ticket: free_ticket) }
+          .to change(Ticket, :count).by(3)
+
+        tickets = order.tickets
+        expect(tickets).to all(be_status_valid)
+        expect(tickets.map(&:user_id)).to all(eq(user.id))
+        expect(tickets.map(&:event_id)).to all(eq(event.id))
+        expect(tickets.map(&:code).uniq.size).to eq(3)
+        expect(tickets.map(&:qr_token).uniq.size).to eq(3)
+      end
+
+      it 'does not issue duplicate tickets on idempotency replay' do
+        first_order = call_service(quantity: 2, idempotency_key: 'free-idem-001', target_ticket: free_ticket)
+
+        expect do
+          replayed = call_service(quantity: 2, idempotency_key: 'free-idem-001', target_ticket: free_ticket)
+          expect(replayed).to eq(first_order)
+        end.not_to change(Ticket, :count)
       end
     end
 

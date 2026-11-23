@@ -20,11 +20,10 @@ module Events
 
     private
 
+    # Event.publicly_visible hides events of blocked, pending and rejected organizations (FR-MOD-5),
+    # so the catalog and moderation share one definition of what the public may see.
     def base_scope
-      Event.published
-           .joins(:organization)
-           .where(organizations: { status: 'approved' })
-           .where(events: { deleted_at: nil })
+      Event.publicly_visible
            .includes(:category, :event_translations, organization: :organization_translations)
     end
 

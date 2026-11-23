@@ -13,3 +13,9 @@ example_heartbeat:
   class: "ExampleHeartbeatJob"
   queue: low
   description: "Hourly heartbeat to verify the scheduler is running"
+
+release_expired_reservations:
+  cron: "* * * * *"
+  class: "ReleaseExpiredReservationsJob"
+  queue: default
+  description: "Release expired unpaid ticket reservations every minute"

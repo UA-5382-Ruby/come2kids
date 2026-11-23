@@ -41,7 +41,8 @@ RSpec.describe Order, type: :model do
       expect(described_class.statuses).to eq(
         'pending' => 'pending',
         'paid' => 'paid',
-        'cancelled' => 'cancelled'
+        'cancelled' => 'cancelled',
+        'expired' => 'expired'
       )
     end
   end

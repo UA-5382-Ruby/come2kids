@@ -43,6 +43,14 @@ Metrics/BlockLength:
     - "spec/**/*"
     - "config/**/*"
 
+# Teach rubocop-rspec the rswag DSL used by the request specs (no cop is disabled or relaxed):
+# `run_test!` defines an example.
+RSpec:
+  Language:
+    Examples:
+      Regular:
+        - run_test!
+
 RSpec/MultipleExpectations:
   Max: 6
 RSpec/ExampleLength:

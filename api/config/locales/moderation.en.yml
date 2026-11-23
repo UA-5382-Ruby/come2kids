@@ -1,0 +1,79 @@
+en:
+  moderation:
+    errors:
+      validation_failed: "The request is invalid."
+      reason_not_text: "must be text"
+      reason_required: "A reason is required."
+      reason_too_long: "must be at most %{count} characters long"
+      message_required: "An appeal message is required."
+      message_too_long: "must be at most %{count} characters long"
+      invalid_transition: "This action is not allowed while the status is \"%{status}\"."
+      organization_not_approved: "The event cannot be published because its organization is not approved."
+      cannot_block_moderator: "Moderators cannot block other moderators."
+      not_blocked: "It is not blocked."
+      appeal_already_open: "An appeal is already open for this block."
+      appeal_cooldown: "Your appeal was rejected recently. A new appeal can be submitted after %{time}."
+      appeal_token_scope: "This token can only be used to submit or check an appeal."
+      user_blocked: "Your account has been blocked."
+      invalid_status_filter: "is not a valid status"
+
+  moderation_mailer:
+    greeting: "Hello, %{name}!"
+    reason_label: "Reason given by the moderator:"
+    signature: "Come2Kids moderation team"
+    organization_approved:
+      subject: "Your organization \"%{name}\" has been approved"
+      heading: "Your organization \"%{name}\" has been approved."
+      body: "You can now create events and submit them for publication."
+    organization_rejected:
+      subject: "Your organization \"%{name}\" was not approved"
+      heading: "Your organization \"%{name}\" was not approved."
+      body: "A moderator rejected the request. Please see the reason below."
+    event_approved:
+      subject: "Your event \"%{title}\" has been published"
+      heading: "Your event \"%{title}\" has been approved and published."
+      body: "The event is now visible in the catalog."
+    event_rejected:
+      subject: "Your event \"%{title}\" was not published"
+      heading: "Your event \"%{title}\" was rejected by a moderator."
+      body: "You can edit the event and submit it for moderation again."
+    user_blocked:
+      subject: "Your Come2Kids account has been blocked"
+      heading: "Your account has been blocked."
+      body: "You cannot use Come2Kids until the block is lifted. You can appeal the block: log in to get access to the appeal form."
+    user_unblocked:
+      subject: "Your Come2Kids account has been unblocked"
+      heading: "Your account has been unblocked."
+      body: "You can log in and use Come2Kids again."
+    organization_blocked:
+      subject: "Your organization \"%{name}\" has been blocked"
+      heading: "Your organization \"%{name}\" has been blocked."
+      body: "Its events are hidden and ticket sales are stopped. Tickets already sold stay valid. As the owner, you can appeal the block."
+    organization_unblocked:
+      subject: "Your organization \"%{name}\" has been unblocked"
+      heading: "Your organization \"%{name}\" has been unblocked."
+      body: "Its published events are visible again and ticket sales have resumed."
+    organization_unblocked_pending:
+      subject: "Your organization \"%{name}\" has been unblocked"
+      heading: "Your organization \"%{name}\" has been unblocked."
+      body: "It is waiting for moderation again: you will get an email once a moderator approves it."
+    appeal_accepted_user:
+      subject: "Your appeal has been accepted"
+      heading: "Your appeal has been accepted and your account has been unblocked."
+      body: "You can log in and use Come2Kids again."
+    appeal_rejected_user:
+      subject: "Your appeal has been rejected"
+      heading: "Your appeal has been rejected; your account stays blocked."
+      body: "You can submit a new appeal 24 hours after this decision."
+    appeal_accepted_organization:
+      subject: "Your appeal for \"%{name}\" has been accepted"
+      heading: "Your appeal has been accepted and the organization \"%{name}\" has been unblocked."
+      body: "Its published events are visible again and ticket sales have resumed."
+    appeal_accepted_organization_pending:
+      subject: "Your appeal for \"%{name}\" has been accepted"
+      heading: "Your appeal has been accepted and the organization \"%{name}\" has been unblocked."
+      body: "It is waiting for moderation again: you will get an email once a moderator approves it."
+    appeal_rejected_organization:
+      subject: "Your appeal for \"%{name}\" has been rejected"
+      heading: "Your appeal has been rejected; the organization \"%{name}\" stays blocked."
+      body: "You can submit a new appeal 24 hours after this decision."

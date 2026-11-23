@@ -1,75 +1,94 @@
 # frozen_string_literal: true
 
-require "rails_helper"
+require 'swagger_helper'
 
-RSpec.describe "POST /api/v1/auth/forgot-password", type: :request do
-  let(:path) { "/api/v1/auth/forgot-password" }
-  let(:user) { create(:user, email: "user@example.com", first_name: "Olena") }
+RSpec.describe 'Auth: forgot password', type: :request do
+  let(:user) { create(:user, email: 'user@example.com', first_name: 'Olena') }
 
   before do
     ActiveJob::Base.queue_adapter = :test
     Tokens::PasswordReset.redis.flushdb
   end
 
-  it "sends a reset email and returns a generic success message for an existing user" do
-    expect {
-      post path, params: { email: user.email }, as: :json
-    }.to have_enqueued_mail(UserMailer, :password_reset) # ✅ Спрощена перевірка
+  path '/api/v1/auth/forgot-password' do
+    post 'Request a password reset link' do
+      tags 'Auth'
+      description 'Always answers with the same message, so it does not reveal whether an account exists.'
+      consumes 'application/json'
+      produces 'application/json'
+      parameter name: 'Accept-Language', in: :header, type: :string, required: false, getter: :accept_language
+      parameter name: :request_body, in: :body, schema: {
+        type: :object, properties: { email: { type: :string, format: :email } }, required: %w[email]
+      }
 
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body["message"]).to eq(I18n.t("auth.forgot_password_sent"))
-  end
+      let(:request_body) { { email: user.email } }
 
-  it "prevents email enumeration by returning the same response for a non-existent email" do
-    expect {
-      post path, params: { email: "nobody@example.com" }, as: :json
-    }.not_to have_enqueued_mail(UserMailer, :password_reset)
+      response '200', 'generic answer (the email is sent only to an existing, active user)' do
+        schema type: :object, properties: { message: { type: :string } }, required: %w[message]
 
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body["message"]).to eq(I18n.t("auth.forgot_password_sent"))
-  end
+        context 'with an existing user' do
+          run_test! { expect(json['message']).to eq(I18n.t('auth.forgot_password_sent')) }
+        end
 
-  it "prevents email enumeration for a blocked user" do
-    user.update!(blocked_at: Time.current, block_reason: "Violation")
+        it 'sends the reset email to an existing user' do
+          expect { send_documented_request }.to have_enqueued_mail(UserMailer, :password_reset)
+        end
 
-    expect {
-      post path, params: { email: user.email }, as: :json
-    }.not_to have_enqueued_mail(UserMailer, :password_reset)
+        context 'with an unknown email' do
+          let(:request_body) { { email: 'nobody@example.com' } }
 
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body["message"]).to eq(I18n.t("auth.forgot_password_sent"))
-  end
+          it 'sends nothing and answers the same' do
+            expect { send_documented_request }.not_to have_enqueued_mail(UserMailer, :password_reset)
+            expect(response).to have_http_status(:ok)
+            expect(json['message']).to eq(I18n.t('auth.forgot_password_sent'))
+          end
 
-  it "enforces a cooldown period to prevent spam" do
-    post path, params: { email: user.email }, as: :json
-    expect(response).to have_http_status(:ok)
+          context 'with Accept-Language: uk' do
+            let(:accept_language) { 'uk' }
 
-    expect {
-      post path, params: { email: user.email }, as: :json
-    }.not_to have_enqueued_mail(UserMailer, :password_reset)
+            run_test! do
+              expect(json['message'])
+                .to eq('Якщо акаунт з такою електронною адресою існує, ми надіслали посилання для скидання пароля.')
+            end
+          end
+        end
 
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body["message"]).to eq(I18n.t("auth.forgot_password_sent"))
-  end
+        context 'with a blocked user' do
+          before { user.update!(blocked_at: Time.current, block_reason: 'Violation') }
 
-  it "returns 400 Bad Request when email is missing" do
-    post path, params: {}, as: :json
+          it 'sends nothing and answers the same' do
+            expect { send_documented_request }.not_to have_enqueued_mail(UserMailer, :password_reset)
+            expect(response).to have_http_status(:ok)
+            expect(json['message']).to eq(I18n.t('auth.forgot_password_sent'))
+          end
+        end
 
-    expect(response).to have_http_status(:bad_request)
-    expect(response.parsed_body["code"]).to eq("PARAMETER_MISSING")
-  end
+        context 'when another request was just made (cooldown)' do
+          before { post '/api/v1/auth/forgot-password', params: { email: user.email }, as: :json }
 
-  it "returns 400 Bad Request when email is blank" do
-    post path, params: { email: "   " }, as: :json
+          it 'sends nothing and answers the same' do
+            expect { send_documented_request }.not_to have_enqueued_mail(UserMailer, :password_reset)
+            expect(response).to have_http_status(:ok)
+            expect(json['message']).to eq(I18n.t('auth.forgot_password_sent'))
+          end
+        end
+      end
 
-    expect(response).to have_http_status(:bad_request)
-    expect(response.parsed_body["code"]).to eq("PARAMETER_MISSING")
-  end
+      response '400', 'email missing' do
+        schema type: :object, properties: { code: { type: :string } }, required: %w[code]
 
-  it "translates the response message based on Accept-Language header" do
-    post path, params: { email: "nobody@example.com" }, as: :json, headers: { "Accept-Language" => "uk" }
+        context 'without an email' do
+          let(:request_body) { {} }
 
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body["message"]).to eq("Якщо акаунт з такою електронною адресою існує, ми надіслали посилання для скидання пароля.")
+          run_test! { expect(json['code']).to eq('PARAMETER_MISSING') }
+        end
+
+        context 'with a blank email' do
+          let(:request_body) { { email: '   ' } }
+
+          run_test! { expect(json['code']).to eq('PARAMETER_MISSING') }
+        end
+      end
+    end
   end
 end

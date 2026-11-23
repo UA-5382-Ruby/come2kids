@@ -17,6 +17,14 @@ module Api
     EMAIL_NOT_CONFIRMED = 'EMAIL_NOT_CONFIRMED'
     USER_BLOCKED = 'USER_BLOCKED'
 
+    # Moderation, blocking and appeals (EPIC-6)
+    INVALID_STATUS_TRANSITION = 'INVALID_STATUS_TRANSITION'
+    CANNOT_BLOCK_MODERATOR = 'CANNOT_BLOCK_MODERATOR'
+    NOT_BLOCKED = 'NOT_BLOCKED'
+    APPEAL_ALREADY_OPEN = 'APPEAL_ALREADY_OPEN'
+    APPEAL_COOLDOWN = 'APPEAL_COOLDOWN'
+    APPEAL_TOKEN_SCOPE = 'APPEAL_TOKEN_SCOPE'
+
     HTTP_STATUSES = {
       BAD_REQUEST => :bad_request,
       UNAUTHORIZED => :unauthorized,
@@ -29,7 +37,13 @@ module Api
       INVALID_CREDENTIALS => :unauthorized,
       TOKEN_EXPIRED => :unauthorized,
       EMAIL_NOT_CONFIRMED => :forbidden,
-      USER_BLOCKED => :forbidden
+      USER_BLOCKED => :forbidden,
+      INVALID_STATUS_TRANSITION => :conflict,
+      CANNOT_BLOCK_MODERATOR => :forbidden,
+      NOT_BLOCKED => :conflict,
+      APPEAL_ALREADY_OPEN => :conflict,
+      APPEAL_COOLDOWN => :too_many_requests,
+      APPEAL_TOKEN_SCOPE => :forbidden
     }.freeze
   end
 end

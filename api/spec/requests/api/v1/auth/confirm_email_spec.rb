@@ -1,150 +1,150 @@
 # frozen_string_literal: true
 
-require "rails_helper"
+require 'swagger_helper'
 
-RSpec.describe "POST /api/v1/auth/confirm-email", type: :request do
+RSpec.describe 'Auth: confirm email', type: :request do
   include ActiveJob::TestHelper
   include ActiveSupport::Testing::TimeHelpers
 
-  let(:path) { "/api/v1/auth/confirm-email" }
   let(:user) { create(:user, :unconfirmed) }
   let!(:raw_token) { Tokens::EmailConfirmation.issue(user) }
 
-  def body
-    response.parsed_body
-  end
+  path '/api/v1/auth/confirm-email' do
+    post 'Confirm the email address with the token from the email' do
+      tags 'Auth'
+      consumes 'application/json'
+      produces 'application/json'
+      parameter name: 'Accept-Language', in: :header, type: :string, required: false, getter: :accept_language
+      parameter name: :confirmation, in: :body, schema: {
+        type: :object,
+        properties: { token: { type: :string, description: 'Single-use token from the email, valid 24 hours' } },
+        required: %w[token]
+      }
 
-  context "with a valid token" do
-    it "confirms the email and returns the user" do
-      post path, params: { token: raw_token }, as: :json
+      let(:confirmation) { { token: raw_token } }
 
-      expect(response).to have_http_status(:ok)
-      expect(body["message"]).to be_present
-      expect(body["user"]).to include("id" => user.id, "email_confirmed" => true)
-      expect(user.reload).to be_email_confirmed
-    end
+      response '200', 'email confirmed' do
+        schema type: :object,
+               properties: {
+                 message: { type: :string },
+                 user: { type: :object, properties: { id: { type: :integer }, email_confirmed: { type: :boolean } } }
+               },
+               required: %w[message user]
 
-    it "removes the token from Redis" do
-      post path, params: { token: raw_token }, as: :json
+        context 'with a valid token' do
+          run_test! do
+            expect(json['message']).to be_present
+            expect(json['user']).to include('id' => user.id, 'email_confirmed' => true)
+            expect(user.reload).to be_email_confirmed
+            token_key = Tokens::EmailConfirmation.token_key(Tokens::EmailConfirmation.digest(raw_token))
+            expect(Tokens::EmailConfirmation.redis.exists?(token_key)).to be(false)
+          end
+        end
 
-      expect(Tokens::EmailConfirmation.redis.exists?(
-        Tokens::EmailConfirmation.token_key(Tokens::EmailConfirmation.digest(raw_token))
-      )).to be(false)
-    end
+        it 'works right before the token expires' do
+          travel_to(23.hours.from_now) { send_documented_request }
 
-    it "works right before the token expires" do
-      travel_to(23.hours.from_now) do
-        post path, params: { token: raw_token }, as: :json
+          expect(response).to have_http_status(:ok)
+        end
+
+        context 'when the email is already confirmed' do
+          let(:confirmed_at) { 2.days.ago.change(usec: 0) }
+
+          before { user.update!(email_confirmed_at: confirmed_at) }
+
+          run_test! { expect(user.reload.email_confirmed_at).to eq(confirmed_at) }
+        end
+
+        context 'with the newest of two tokens' do
+          let(:confirmation) { { token: Tokens::EmailConfirmation.issue(user) } }
+
+          run_test!
+        end
+
+        it 'confirms the account with the token from the registration email (full flow)' do
+          ActionMailer::Base.deliveries.clear
+          perform_enqueued_jobs do
+            post '/api/v1/auth/register', as: :json,
+                                          params: { email: 'kid@example.com', password: 'Password123',
+                                                    first_name: 'Ira', last_name: 'Koval' }
+          end
+          token = ActionMailer::Base.deliveries.last.text_part.decoded[/token=([\w-]+)/, 1]
+
+          post '/api/v1/auth/confirm-email', params: { token: token }, as: :json
+
+          expect(response).to have_http_status(:ok)
+          expect(User.find_by!(email: 'kid@example.com')).to be_email_confirmed
+        end
       end
 
-      expect(response).to have_http_status(:ok)
-    end
+      response '400', 'token missing' do
+        schema '$ref' => '#/components/schemas/error'
 
-    it "keeps the original time if the email is already confirmed" do
-      confirmed_at = 2.days.ago.change(usec: 0)
-      user.update!(email_confirmed_at: confirmed_at)
+        context 'without a token' do
+          let(:confirmation) { {} }
 
-      post path, params: { token: raw_token }, as: :json
+          run_test! do
+            expect(json['code']).to eq('PARAMETER_MISSING')
+            expect(json['details']).to include(a_hash_including('field' => 'token'))
+          end
+        end
 
-      expect(response).to have_http_status(:ok)
-      expect(user.reload.email_confirmed_at).to eq(confirmed_at)
-    end
-  end
+        context 'with a blank token' do
+          let(:confirmation) { { token: '' } }
 
-  context "with an invalid token" do
-    it "rejects an unknown token" do
-      post path, params: { token: "unknown-token" }, as: :json
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(body["code"]).to eq("TOKEN_INVALID")
-      expect(user.reload).not_to be_email_confirmed
-    end
-
-    it "rejects the digest used as a token" do
-      post path, params: { token: Tokens::EmailConfirmation.digest(raw_token) }, as: :json
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(body["code"]).to eq("TOKEN_INVALID")
-    end
-
-    it "returns 400 when the token is missing" do
-      post path, params: {}, as: :json
-
-      expect(response).to have_http_status(:bad_request)
-      expect(body["code"]).to eq("PARAMETER_MISSING")
-      expect(body["details"]).to include(a_hash_including("field" => "token"))
-    end
-
-    it "returns 400 when the token is blank" do
-      post path, params: { token: "" }, as: :json
-
-      expect(response).to have_http_status(:bad_request)
-      expect(body["code"]).to eq("PARAMETER_MISSING")
-    end
-  end
-
-  context "with an expired token" do
-    it "returns TOKEN_INVALID and leaves the account unverified" do
-      travel_to(25.hours.from_now) do
-        post path, params: { token: raw_token }, as: :json
+          run_test! { expect(json['code']).to eq('PARAMETER_MISSING') }
+        end
       end
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(body["code"]).to eq("TOKEN_INVALID")
-      expect(user.reload).not_to be_email_confirmed
-    end
-  end
+      response '422', 'token invalid, expired or already used' do
+        schema '$ref' => '#/components/schemas/error'
 
-  context "with a used token" do
-    it "rejects the second use of the same token" do
-      post path, params: { token: raw_token }, as: :json
-      expect(response).to have_http_status(:ok)
+        context 'with an unknown token' do
+          let(:confirmation) { { token: 'unknown-token' } }
 
-      post path, params: { token: raw_token }, as: :json
+          context 'without a language (Ukrainian)' do
+            run_test! do
+              expect(json['code']).to eq('TOKEN_INVALID')
+              expect(json['message']).to start_with('Токен недійсний')
+              expect(user.reload).not_to be_email_confirmed
+            end
+          end
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(body["code"]).to eq("TOKEN_USED")
-    end
-  end
+          context 'with Accept-Language: en' do
+            let(:accept_language) { 'en' }
 
-  context "with a superseded token" do
-    it "rejects the old token after a new one was issued" do
-      new_token = Tokens::EmailConfirmation.issue(user)
+            run_test! { expect(json['message']).to start_with('The token is invalid') }
+          end
+        end
 
-      post path, params: { token: raw_token }, as: :json
-      expect(body["code"]).to eq("TOKEN_INVALID")
+        context 'with the digest used as a token' do
+          let(:confirmation) { { token: Tokens::EmailConfirmation.digest(raw_token) } }
 
-      post path, params: { token: new_token }, as: :json
-      expect(response).to have_http_status(:ok)
-    end
-  end
+          run_test! { expect(json['code']).to eq('TOKEN_INVALID') }
+        end
 
-  describe "localization" do
-    it "translates the error message" do
-      post path, params: { token: "unknown" }, as: :json, headers: { "Accept-Language" => "en" }
-      expect(body["message"]).to start_with("The token is invalid")
+        context 'with an expired token' do
+          it 'returns TOKEN_INVALID and leaves the account unverified' do
+            travel_to(25.hours.from_now) { send_documented_request }
 
-      post path, params: { token: "unknown" }, as: :json, headers: { "Accept-Language" => "uk" }
-      expect(body["message"]).to start_with("Токен недійсний")
-    end
-  end
+            expect(response).to have_http_status(:unprocessable_content)
+            expect(json['code']).to eq('TOKEN_INVALID')
+            expect(user.reload).not_to be_email_confirmed
+          end
+        end
 
-  describe "full flow: register -> email -> confirm" do
-    it "confirms the account with the token from the email" do
-      ActionMailer::Base.deliveries.clear
+        context 'with a token that was already used' do
+          before { post '/api/v1/auth/confirm-email', params: { token: raw_token }, as: :json }
 
-      perform_enqueued_jobs do
-        post "/api/v1/auth/register", as: :json, params: {
-          email: "kid@example.com", password: "Password123", first_name: "Ira", last_name: "Koval"
-        }
+          run_test! { expect(json['code']).to eq('TOKEN_USED') }
+        end
+
+        context 'with a token superseded by a newer one' do
+          before { Tokens::EmailConfirmation.issue(user) }
+
+          run_test! { expect(json['code']).to eq('TOKEN_INVALID') }
+        end
       end
-      expect(response).to have_http_status(:created)
-
-      token = ActionMailer::Base.deliveries.last.text_part.decoded[/token=([\w-]+)/, 1]
-      post path, params: { token: token }, as: :json
-
-      expect(response).to have_http_status(:ok)
-      expect(User.find_by!(email: "kid@example.com")).to be_email_confirmed
     end
   end
 end

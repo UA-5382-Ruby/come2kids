@@ -12,6 +12,7 @@ class Organization < ApplicationRecord
   has_many :organization_translations, dependent: :destroy
   has_many :events, dependent: :restrict_with_error
   has_many :company_members, dependent: :destroy
+  has_many :appeals, as: :target, dependent: :destroy
 
   # NOTE: Менеджери: тільки membership з role_id = MANAGER_ID
   # Якщо в майбутньому з'являться нові ролі (бухгалтер, редактор),
@@ -29,16 +30,40 @@ class Organization < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validates :rejection_reason, presence: true, if: -> { status == 'rejected' }
   validates :approved_at, presence: true, if: -> { status == 'approved' }
+  validates :block_reason, presence: true, if: :blocked?
 
   scope :approved, -> { where(status: 'approved') }
   scope :pending, -> { where(status: 'pending_approval') }
+  # FR-MOD-5: only approved, not deleted organizations are shown publicly. A blocked organization has the
+  # status `blocked`, so this scope also hides blocked organizations and (through Event.publicly_visible) their events.
+  scope :publicly_visible, -> { where(status: 'approved', deleted_at: nil) }
 
   def approved?
     status == 'approved'
   end
 
+  def pending_approval?
+    status == 'pending_approval'
+  end
+
+  def rejected?
+    status == 'rejected'
+  end
+
   def blocked?
     status == 'blocked'
+  end
+
+  # FR-ORG-2, FR-MOD-5: owners and managers may create, edit and publish events only while the
+  # organization is approved; a blocked, pending or rejected organization cannot.
+  def accepts_event_changes?
+    approved? && deleted_at.nil?
+  end
+
+  # The name in the given locale, falling back to Ukrainian, then to the slug.
+  def name(locale = I18n.locale)
+    translations = organization_translations.index_by(&:locale)
+    (translations[locale.to_s] || translations['uk'])&.name || slug
   end
 
   private

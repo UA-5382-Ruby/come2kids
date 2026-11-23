@@ -3,7 +3,7 @@
 module Api
   class OrderBlueprint < Blueprinter::Base
     identifier :id
-    fields :status, :currency
+    fields :event_id, :status, :currency
 
     field :amountMinor do |order|
       order.total_amount
@@ -16,5 +16,7 @@ module Api
     field :created_at do |order|
       order.created_at&.utc&.iso8601(3)
     end
+
+    association :tickets, blueprint: Api::TicketBlueprint
   end
 end

@@ -1,0 +1,12 @@
+<%# Shared moderation notification (ModerationMailer): heading, body and optional moderator reason. %>
+<h2><%= t("moderation_mailer.greeting", name: @recipient.first_name) %></h2>
+<p><strong><%= @heading %></strong></p>
+<p><%= @body %></p>
+
+<%# Moderator reason %>
+<% if @reason %>
+  <p><%= t("moderation_mailer.reason_label") %></p>
+  <blockquote><%= simple_format(@reason) %></blockquote>
+<% end %>
+
+<p><%= t("moderation_mailer.signature") %></p>

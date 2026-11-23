@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-# Resolves the current user from an "Authorization: Bearer <access token>" header.
+# Resolves the current user from an "Authorization: Bearer <token>" header.
 # Controllers opt in with `before_action :authenticate_user!`, or with `before_action :authenticate_user`
-# on endpoints that guests may also call.
+# on endpoints that guests may also call. The appeal endpoints use `authenticate_appellant!`, which also
+# accepts the appeal token a blocked user receives at login (FR-APP-1).
 module Authenticatable
   extend ActiveSupport::Concern
 
@@ -17,12 +18,27 @@ module Authenticatable
   end
 
   def authenticate_user!
+    authenticate_with_scopes([ JwtService::ACCESS_SCOPE ])
+  end
+
+  # A blocked user authenticates with the appeal token; everybody else (e.g. the owner of a blocked
+  # organization, who is not blocked) uses a normal access token.
+  def authenticate_appellant!
+    authenticate_with_scopes([ JwtService::ACCESS_SCOPE, JwtService::APPEAL_SCOPE ])
+  end
+
+  def authenticate_with_scopes(allowed_scopes)
     token = bearer_token
     return render_unauthorized if token.blank?
 
-    user = User.find_by(id: JwtService.decode(token)['sub'])
+    payload = JwtService.decode(token)
+    scope = JwtService.scope_of(payload)
+    return render_appeal_token_scope unless allowed_scopes.include?(scope)
+
+    user = User.find_by(id: payload['sub'])
     return render_unauthorized unless account_usable?(user)
-    return render_user_blocked(user) if user.blocked_at.present?
+    # Access tokens of a blocked user stop working at once (FR-MOD-4); the appeal token is meant for them.
+    return render_user_blocked(user) if user.blocked? && scope == JwtService::ACCESS_SCOPE
 
     @current_user = user
   rescue JwtService::ExpiredToken => e
@@ -45,9 +61,20 @@ module Authenticatable
     render_error(code: Api::ErrorCodes::UNAUTHORIZED, message: message, status: :unauthorized)
   end
 
-  # FR-APP-1: the appeal token is issued in EPIC-6 (appeals).
-  def render_user_blocked(user)
-    render_error(code: Api::ErrorCodes::USER_BLOCKED, message: 'Your account has been blocked',
-      status: :forbidden, details: [ { field: 'block_reason', message: user.block_reason } ])
+  def render_appeal_token_scope
+    render_error(code: Api::ErrorCodes::APPEAL_TOKEN_SCOPE, message: I18n.t('moderation.errors.appeal_token_scope'),
+      status: :forbidden)
+  end
+
+  # FR-APP-1: at login a blocked user also gets an appeal token (appeal_token:), which opens only the
+  # appeal endpoints. The other keys keep the usual error format.
+  def render_user_blocked(user, appeal_token: nil)
+    body = { code: Api::ErrorCodes::USER_BLOCKED, message: I18n.t('moderation.errors.user_blocked'),
+             details: [ { field: 'block_reason', message: user.block_reason } ] }
+    if appeal_token
+      body[:appeal_token] = appeal_token
+      body[:appeal_token_expires_in] = JwtService::APPEAL_TTL.to_i
+    end
+    render json: body, status: :forbidden
   end
 end

@@ -1,91 +1,90 @@
 # frozen_string_literal: true
 
-require "rails_helper"
 require 'swagger_helper'
 
-RSpec.describe "POST /api/v1/auth/reset-password", type: :request do
-  let(:path) { "/api/v1/auth/reset-password" }
-  let(:user) { create(:user, email: "user@example.com", password: "OldPassword123") }
+RSpec.describe 'Auth: reset password', type: :request do
+  let(:user) { create(:user, email: 'user@example.com', password: 'OldPassword123') }
   let(:raw_token) { Tokens::PasswordReset.issue(user) }
+  let(:valid_params) { { token: raw_token, password: 'NewPassword123', password_confirmation: 'NewPassword123' } }
 
-  let(:valid_params) do
-    {
-      token: raw_token,
-      password: "NewPassword123",
-      password_confirmation: "NewPassword123"
-    }
-  end
+  before { Tokens::PasswordReset.redis.flushdb }
 
-  before do
-    Tokens::PasswordReset.redis.flushdb
-  end
+  path '/api/v1/auth/reset-password' do
+    post 'Set a new password with the token from the reset email' do
+      tags 'Auth'
+      consumes 'application/json'
+      produces 'application/json'
+      parameter name: 'Accept-Language', in: :header, type: :string, required: false, getter: :accept_language
+      parameter name: :reset, in: :body, schema: {
+        type: :object,
+        properties: {
+          token: { type: :string },
+          password: { type: :string, description: 'At least 8 characters with a letter and a digit' },
+          password_confirmation: { type: :string }
+        },
+        required: %w[token password]
+      }
 
-  it "updates the password and returns a success message" do
-    post path, params: valid_params, as: :json
+      let(:reset) { valid_params }
 
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body["message"]).to eq(I18n.t("auth.password_reset_success"))
+      response '200', 'password changed' do
+        schema type: :object, properties: { message: { type: :string } }, required: %w[message]
 
-    user.reload
-    expect(user.authenticate("NewPassword123")).to eq(user)
+        run_test! do
+          expect(json['message']).to eq(I18n.t('auth.password_reset_success'))
+          expect(user.reload.authenticate('NewPassword123')).to eq(user)
+        end
+      end
 
-    # ⚠️ ВАЖЛИВО: Адаптуй цю перевірку під свою реалізацію відкликання токенів!
-    # Приклад для Варіанту Б (видалення Set):
-    # expect(Tokens::PasswordReset.redis.scard("user:#{user.id}:refresh_tokens")).to eq(0)
-    # Приклад для Варіанту В (інкремент версії):
-    # expect(Tokens::PasswordReset.redis.get("user:#{user.id}:refresh_token_version").to_i).to eq(1)
-  end
+      response '400', 'required parameters missing' do
+        schema type: :object, properties: { code: { type: :string } }, required: %w[code]
 
-  it "rejects an unknown or invalid token" do
-    post path, params: valid_params.merge(token: "invalid-token"), as: :json
+        let(:reset) { { token: raw_token } }
 
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body["code"]).to eq("TOKEN_INVALID")
-  end
+        run_test! { expect(json['code']).to eq('PARAMETER_MISSING') }
+      end
 
-  it "rejects a previously used token (single-use guarantee)" do
-    # Перше успішне використання
-    post path, params: valid_params, as: :json
-    expect(response).to have_http_status(:ok)
+      response '422', 'token invalid or used, or the password is invalid' do
+        schema type: :object, properties: { code: { type: :string } }, required: %w[code]
 
-    # Друга спроба з тим самим токеном
-    post path, params: valid_params, as: :json
+        context 'with an unknown token' do
+          let(:reset) { valid_params.merge(token: 'invalid-token') }
 
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body["code"]).to eq("TOKEN_USED")
-  end
+          run_test! { expect(json['code']).to eq('TOKEN_INVALID') }
+        end
 
-  it "rejects a weak password with validation errors" do
-    post path, params: valid_params.merge(password: "weak", password_confirmation: "weak"), as: :json
+        context 'with a token that was already used' do
+          before { post '/api/v1/auth/reset-password', params: valid_params, as: :json }
 
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body["code"]).to eq("VALIDATION_ERROR")
-    expect(response.parsed_body["details"].first["field"]).to eq("password")
-    expect(response.parsed_body["details"].first["error"]).to eq("complexity")
-  end
+          run_test! { expect(json['code']).to eq('TOKEN_USED') }
+        end
 
-  it "rejects mismatched password confirmation" do
-    post path, params: valid_params.merge(password_confirmation: "DifferentPassword123"), as: :json
+        context 'with a weak password' do
+          let(:reset) { valid_params.merge(password: 'weak', password_confirmation: 'weak') }
 
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body["code"]).to eq("VALIDATION_ERROR")
-    expect(response.parsed_body["details"].map { |d| d["field"] }).to include("password_confirmation")
-  end
+          context 'without a language' do
+            run_test! do
+              expect(json['code']).to eq('VALIDATION_ERROR')
+              expect(json['details'].first).to include('field' => 'password', 'error' => 'complexity')
+            end
+          end
 
-  it "returns 400 Bad Request when required parameters are missing" do
-    post path, params: { token: raw_token }, as: :json # Відсутні password та password_confirmation
+          context 'with Accept-Language: uk' do
+            let(:accept_language) { 'uk' }
 
-    expect(response).to have_http_status(:bad_request)
-    expect(response.parsed_body["code"]).to eq("PARAMETER_MISSING")
-  end
+            run_test! { expect(json['message']).to eq('Дані не пройшли перевірку.') }
+          end
+        end
 
-  it "translates validation errors based on Accept-Language header" do
-    post path,
-         params: valid_params.merge(password: "weak", password_confirmation: "weak"),
-         as: :json,
-         headers: { "Accept-Language" => "uk" }
+        context 'with a mismatched confirmation' do
+          let(:reset) { valid_params.merge(password_confirmation: 'DifferentPassword123') }
 
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body["message"]).to eq("Дані не пройшли перевірку.")
+          run_test! do
+            expect(json['code']).to eq('VALIDATION_ERROR')
+            expect(json['details'].pluck('field')).to include('password_confirmation')
+          end
+        end
+      end
+    end
   end
 end

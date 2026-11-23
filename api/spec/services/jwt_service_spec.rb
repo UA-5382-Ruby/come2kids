@@ -46,6 +46,24 @@ RSpec.describe JwtService do
       expect { described_class.decode(foreign_token) }.to raise_error(JwtService::InvalidToken)
     end
 
+    it "marks access tokens with the access scope" do
+      expect(described_class.scope_of(described_class.decode(token))).to eq(described_class::ACCESS_SCOPE)
+    end
+
+    it "treats a token without a scope claim as an access token" do
+      legacy_token = sign({ sub: user.id.to_s, iss: described_class::ISSUER, exp: 1.hour.from_now.to_i })
+
+      expect(described_class.scope_of(described_class.decode(legacy_token))).to eq(described_class::ACCESS_SCOPE)
+    end
+
+    it "issues appeal tokens that live for the appeal ttl" do
+      appeal_token = described_class.encode_appeal(user)
+      payload = described_class.decode(appeal_token)
+
+      expect(described_class.scope_of(payload)).to eq(described_class::APPEAL_SCOPE)
+      expect(payload["exp"] - payload["iat"]).to eq(described_class::APPEAL_TTL.to_i)
+    end
+
     it "raises InvalidToken when sub is missing" do
       anonymous_token = sign({ iss: described_class::ISSUER, exp: 1.hour.from_now.to_i })
 

@@ -1,234 +1,232 @@
 # frozen_string_literal: true
 
-require "rails_helper"
+require 'swagger_helper'
 
-RSpec.describe "POST /api/v1/auth/register", type: :request do
+RSpec.describe 'Auth: registration', type: :request do
   include ActiveJob::TestHelper
 
-  let(:path) { "/api/v1/auth/register" }
   let(:valid_params) do
-    {
-      email: "mom@example.com",
-      password: "Password123",
-      first_name: "Olena",
-      last_name: "Shevchenko"
-    }
-  end
-
-  def body
-    response.parsed_body
+    { email: 'mom@example.com', password: 'Password123', first_name: 'Olena', last_name: 'Shevchenko' }
   end
 
   def error_details(field, error)
-    body["details"].select { |detail| detail["field"] == field && detail["error"] == error }
+    json['details'].select { |detail| detail['field'] == field && detail['error'] == error }
   end
 
-  context "with valid data" do
-    it "creates an unverified user and returns 201" do
-      expect { post path, params: valid_params, as: :json }.to change(User, :count).by(1)
+  path '/api/v1/auth/register' do
+    post 'Register a new user and send the confirmation email' do
+      tags 'Auth'
+      description 'Creates an unverified user and emails a single-use confirmation link valid for 24 hours.'
+      consumes 'application/json'
+      produces 'application/json'
+      parameter name: 'Accept-Language', in: :header, type: :string, required: false, getter: :accept_language,
+                description: 'uk (default) or en; also the default preferred_locale'
+      parameter name: :locale, in: :query, type: :string, required: false, description: 'Overrides Accept-Language'
+      parameter name: :registration, in: :body, schema: {
+        type: :object,
+        properties: {
+          email: { type: :string, format: :email },
+          password: { type: :string, description: 'At least 8 characters with a letter and a digit' },
+          password_confirmation: { type: :string },
+          first_name: { type: :string, maxLength: 100 },
+          last_name: { type: :string, maxLength: 100 },
+          preferred_locale: { type: :string, enum: %w[uk en] }
+        },
+        required: %w[email password first_name last_name]
+      }
 
-      expect(response).to have_http_status(:created)
-      expect(body["message"]).to be_present
-      expect(body["user"]).to include(
-                                "email" => "mom@example.com",
-                                "first_name" => "Olena",
-                                "last_name" => "Shevchenko",
-                                "preferred_locale" => "uk",
-                                "email_confirmed" => false
-                              )
-      expect(User.find_by(email: "mom@example.com")).not_to be_email_confirmed
-    end
+      let(:registration) { valid_params }
 
-    it "never returns password data" do
-      post path, params: valid_params, as: :json
+      response '201', 'user registered' do
+        schema type: :object,
+               properties: {
+                 message: { type: :string },
+                 user: {
+                   type: :object,
+                   properties: {
+                     id: { type: :integer },
+                     email: { type: :string },
+                     first_name: { type: :string },
+                     last_name: { type: :string },
+                     preferred_locale: { type: :string },
+                     email_confirmed: { type: :boolean },
+                     created_at: { type: :string, format: 'date-time' }
+                   }
+                 }
+               },
+               required: %w[message user]
 
-      expect(body["user"].keys).not_to include("password", "password_digest", "password_confirmation")
-      expect(response.body).not_to include("Password123")
-    end
+        context 'with valid data' do
+          run_test! do
+            expect(json['message']).to be_present
+            expect(json['user']).to include('email' => 'mom@example.com', 'first_name' => 'Olena',
+                                            'last_name' => 'Shevchenko', 'preferred_locale' => 'uk',
+                                            'email_confirmed' => false)
+            expect(User.find_by(email: 'mom@example.com')).not_to be_email_confirmed
+            expect(json['user'].keys).not_to include('password', 'password_digest', 'password_confirmation')
+            expect(response.body).not_to include('Password123')
+          end
+        end
 
-    it "stores a confirmation token in Redis for 24 hours" do
-      post path, params: valid_params, as: :json
+        it 'creates the user and enqueues the confirmation email' do
+          expect { send_documented_request }.to change(User, :count).by(1)
+            .and have_enqueued_mail(UserMailer, :confirmation)
+        end
 
-      user = User.find_by!(email: "mom@example.com")
-      ttl = Tokens::EmailConfirmation.redis.ttl(Tokens::EmailConfirmation.user_key(user.id))
-      expect(ttl).to be_within(5).of(24.hours.to_i)
-    end
+        it 'stores a confirmation token in Redis for 24 hours' do
+          send_documented_request
 
-    it "enqueues the confirmation email" do
-      expect { post path, params: valid_params, as: :json }
-        .to have_enqueued_mail(UserMailer, :confirmation)
-    end
+          user = User.find_by!(email: 'mom@example.com')
+          ttl = Tokens::EmailConfirmation.redis.ttl(Tokens::EmailConfirmation.user_key(user.id))
+          expect(ttl).to be_within(5).of(24.hours.to_i)
+        end
 
-    it "keeps only the digest of the token in Redis, never the raw token" do
-      ActionMailer::Base.deliveries.clear
-      perform_enqueued_jobs { post path, params: valid_params, as: :json }
+        it 'keeps only the digest of the token in Redis, never the raw token' do
+          ActionMailer::Base.deliveries.clear
+          perform_enqueued_jobs { send_documented_request }
 
-      raw_token = ActionMailer::Base.deliveries.last.text_part.decoded[/token=([\w-]+)/, 1]
-      keys = Tokens::EmailConfirmation.redis.keys
+          raw_token = ActionMailer::Base.deliveries.last.text_part.decoded[/token=([\w-]+)/, 1]
+          keys = Tokens::EmailConfirmation.redis.keys
+          expect(raw_token).to be_present
+          expect(keys).to include("email_confirmation:token:#{Digest::SHA256.hexdigest(raw_token)}")
+          expect(keys).not_to include(a_string_including(raw_token))
+        end
 
-      expect(raw_token).to be_present
-      expect(keys).to include("email_confirmation:token:#{Digest::SHA256.hexdigest(raw_token)}")
-      expect(keys).not_to include(a_string_including(raw_token))
-    end
+        context 'with an email in mixed case and spaces' do
+          let(:registration) { valid_params.merge(email: '  Mom@Example.COM ') }
 
-    it "normalizes the email" do
-      post path, params: valid_params.merge(email: "  Mom@Example.COM "), as: :json
+          run_test! { expect(User.last.email).to eq('mom@example.com') }
+        end
 
-      expect(response).to have_http_status(:created)
-      expect(User.last.email).to eq("mom@example.com")
-    end
+        context 'when the request language is English' do
+          let(:accept_language) { 'en' }
 
-    it "saves the language of the request as the preferred language" do
-      post path, params: valid_params, as: :json, headers: { "Accept-Language" => "en" }
+          run_test! { expect(json['user']['preferred_locale']).to eq('en') }
+        end
 
-      expect(body["user"]["preferred_locale"]).to eq("en")
-    end
+        context 'with an explicit preferred_locale' do
+          let(:registration) { valid_params.merge(preferred_locale: 'en') }
 
-    it "prefers an explicit preferred_locale over the request language" do
-      post path, params: valid_params.merge(preferred_locale: "en"), as: :json
+          run_test! { expect(json['user']['preferred_locale']).to eq('en') }
+        end
 
-      expect(body["user"]["preferred_locale"]).to eq("en")
-    end
+        context 'with attributes the client must not set' do
+          let(:registration) { valid_params.merge(platform_role: 'moderator', email_confirmed_at: Time.current) }
 
-    it "ignores attributes that must not be set by the client" do
-      post path, params: valid_params.merge(platform_role: "moderator", email_confirmed_at: Time.current), as: :json
+          run_test! do
+            user = User.find_by!(email: 'mom@example.com')
+            expect(user.platform_role).to eq('user')
+            expect(user).not_to be_email_confirmed
+          end
+        end
 
-      user = User.find_by!(email: "mom@example.com")
-      expect(user.platform_role).to eq("user")
-      expect(user).not_to be_email_confirmed
-    end
-  end
+        context 'with a password of exactly 8 characters with a letter and a digit' do
+          let(:registration) { valid_params.merge(password: 'abcdefg1') }
 
-  context "with a duplicate email" do
-    before { create(:user, email: "mom@example.com") }
-
-    it "returns 422 with the taken error on email" do
-      expect { post path, params: valid_params, as: :json }.not_to change(User, :count)
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(body["code"]).to eq("VALIDATION_ERROR")
-      expect(error_details("email", "taken")).not_to be_empty
-    end
-
-    it "treats the email as case-insensitive" do
-      post path, params: valid_params.merge(email: "MOM@EXAMPLE.COM"), as: :json
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(error_details("email", "taken")).not_to be_empty
-    end
-
-    it "does not send an email" do
-      expect { post path, params: valid_params, as: :json }
-        .not_to have_enqueued_mail(UserMailer, :confirmation)
-    end
-  end
-
-  context "with a weak password" do
-    {
-      "fewer than 8 characters" => "Ab1",
-      "no digit" => "PasswordOnly",
-      "no letter" => "12345678"
-    }.each do |label, password|
-      it "rejects a password with #{label}" do
-        expect { post path, params: valid_params.merge(password: password), as: :json }
-          .not_to change(User, :count)
-
-        expect(response).to have_http_status(:unprocessable_content)
-        expect(error_details("password", "complexity")).not_to be_empty
+          run_test!
+        end
       end
-    end
 
-    it "accepts exactly 8 characters with a letter and a digit" do
-      post path, params: valid_params.merge(password: "abcdefg1"), as: :json
+      response '422', 'validation failed' do
+        schema '$ref' => '#/components/schemas/error'
 
-      expect(response).to have_http_status(:created)
-    end
-  end
+        context 'with a duplicate email' do
+          before { create(:user, email: 'mom@example.com') }
 
-  context "with invalid data" do
-    it "rejects a mismatched password confirmation" do
-      post path, params: valid_params.merge(password_confirmation: "Different123"), as: :json
+          context 'with the same email' do
+            run_test! do
+              expect(json['code']).to eq('VALIDATION_ERROR')
+              expect(error_details('email', 'taken')).not_to be_empty
+            end
+          end
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(error_details("password_confirmation", "confirmation")).not_to be_empty
-    end
+          it 'creates no user and sends no email' do
+            expect { send_documented_request }.not_to change(User, :count)
+            expect(enqueued_jobs).to be_empty
+          end
 
-    it "rejects an invalid email format" do
-      post path, params: valid_params.merge(email: "not-an-email"), as: :json
+          context 'when the email differs only in case' do
+            let(:registration) { valid_params.merge(email: 'MOM@EXAMPLE.COM') }
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(error_details("email", "invalid")).not_to be_empty
-    end
+            run_test! { expect(error_details('email', 'taken')).not_to be_empty }
+          end
+        end
 
-    it "rejects an unsupported preferred_locale" do
-      post path, params: valid_params.merge(preferred_locale: "de"), as: :json
+        { 'fewer than 8 characters' => 'Ab1', 'no digit' => 'PasswordOnly', 'no letter' => '12345678' }
+          .each do |label, password|
+            context "with a password with #{label}" do
+              let(:registration) { valid_params.merge(password: password) }
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(error_details("preferred_locale", "inclusion")).not_to be_empty
-    end
+              run_test! { expect(error_details('password', 'complexity')).not_to be_empty }
+            end
+          end
 
-    it "rejects names longer than 100 characters" do
-      post path, params: valid_params.merge(first_name: "a" * 101), as: :json
+        context 'with a weak password' do
+          let(:registration) { valid_params.merge(password: 'weak') }
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(error_details("first_name", "too_long")).not_to be_empty
-    end
+          it 'creates neither a user nor a token' do
+            expect { send_documented_request }
+              .not_to change { [ User.count, Tokens::EmailConfirmation.redis.keys.size ] }
+          end
 
-    it "lists every missing required field" do
-      post path, params: {}, as: :json
+          context 'with Accept-Language: en' do
+            let(:accept_language) { 'en' }
 
-      expect(response).to have_http_status(:unprocessable_content)
-      fields = body["details"].map { |detail| detail["field"] }
-      expect(fields).to include("email", "password", "first_name", "last_name")
-    end
+            run_test! do
+              message = json['details'].find { |detail| detail['error'] == 'complexity' }['message']
+              expect(message).to include('at least 8 characters')
+            end
+          end
+        end
 
-    it "does not create a user or a token when validation fails" do
-      expect { post path, params: valid_params.merge(password: "weak"), as: :json }
-        .not_to change { [ User.count, Tokens::EmailConfirmation.redis.keys.size ] }
-    end
-  end
+        {
+          'a mismatched password confirmation' => [ { password_confirmation: 'Different123' },
+                                                    'password_confirmation', 'confirmation' ],
+          'an invalid email format' => [ { email: 'not-an-email' }, 'email', 'invalid' ],
+          'an unsupported preferred_locale' => [ { preferred_locale: 'de' }, 'preferred_locale', 'inclusion' ],
+          'a name longer than 100 characters' => [ { first_name: 'a' * 101 }, 'first_name', 'too_long' ]
+        }.each do |label, (changes, field, error)|
+          context "with #{label}" do
+            let(:registration) { valid_params.merge(changes) }
 
-  describe "localization" do
-    it "uses the same error code in every language" do
-      post path, params: {}, as: :json, headers: { "Accept-Language" => "uk" }
-      uk_code = body["code"]
-      post path, params: {}, as: :json, headers: { "Accept-Language" => "en" }
+            run_test! { expect(error_details(field, error)).not_to be_empty }
+          end
+        end
 
-      expect(body["code"]).to eq(uk_code)
-      expect(body["code"]).to eq("VALIDATION_ERROR")
-    end
+        context 'with an empty body' do
+          let(:registration) { {} }
 
-    it "translates the message by Accept-Language" do
-      post path, params: {}, as: :json, headers: { "Accept-Language" => "en-US,en;q=0.9" }
-      expect(body["message"]).to eq("Validation failed.")
+          context 'without a language (Ukrainian by default)' do
+            run_test! do
+              expect(json['code']).to eq('VALIDATION_ERROR')
+              expect(json['details'].pluck('field')).to include('email', 'password', 'first_name', 'last_name')
+              expect(json['message']).to eq('Дані не пройшли перевірку.')
+            end
+          end
 
-      post path, params: {}, as: :json, headers: { "Accept-Language" => "uk" }
-      expect(body["message"]).to eq("Дані не пройшли перевірку.")
-    end
+          context 'with Accept-Language: en-US,en;q=0.9' do
+            let(:accept_language) { 'en-US,en;q=0.9' }
 
-    it "uses Ukrainian when no language is specified" do
-      post path, params: {}, as: :json
+            run_test! do
+              expect(json['code']).to eq('VALIDATION_ERROR')
+              expect(json['message']).to eq('Validation failed.')
+            end
+          end
 
-      expect(body["message"]).to eq("Дані не пройшли перевірку.")
-    end
+          context 'when the locale parameter overrides the header' do
+            let(:accept_language) { 'uk' }
+            let(:locale) { 'en' }
 
-    it "lets the locale parameter override the header" do
-      post "#{path}?locale=en", params: {}, as: :json, headers: { "Accept-Language" => "uk" }
+            run_test! { expect(json['message']).to eq('Validation failed.') }
+          end
 
-      expect(body["message"]).to eq("Validation failed.")
-    end
+          context 'with an unsupported language' do
+            let(:accept_language) { 'fr-FR,fr;q=0.9' }
 
-    it "falls back to Ukrainian for an unsupported language" do
-      post path, params: {}, as: :json, headers: { "Accept-Language" => "fr-FR,fr;q=0.9" }
-
-      expect(body["message"]).to eq("Дані не пройшли перевірку.")
-    end
-
-    it "translates the password complexity message" do
-      post path, params: valid_params.merge(password: "weak"), as: :json, headers: { "Accept-Language" => "en" }
-
-      message = body["details"].find { |detail| detail["error"] == "complexity" }["message"]
-      expect(message).to include("at least 8 characters")
+            run_test! { expect(json['message']).to eq('Дані не пройшли перевірку.') }
+          end
+        end
+      end
     end
   end
 end
