@@ -37,28 +37,12 @@ module Events
       private
 
       def build_payload
-        payload = current_snapshot
+        payload = Snapshot.take(@event)
         SCALAR.each { |key| payload[key.to_s] = @attributes[key] if @attributes.key?(key) }
         payload['translations'] = translation_rows if @attributes.key?(:translations)
         payload['ticket_types'] = ticket_type_rows if @attributes.key?(:ticket_types)
         payload['images'] = image_rows if @attributes.key?(:images)
         payload
-      end
-
-      def current_snapshot
-        {
-          'category_id' => @event.category_id,
-          'start_at' => stamp(@event.start_at),
-          'end_at' => stamp(@event.end_at),
-          'time_zone' => @event.time_zone,
-          'location_type' => @event.location_type,
-          'address' => @event.address,
-          'city' => @event.city,
-          'online_url' => @event.online_url,
-          'translations' => @event.event_translations.map { |row| translation_hash(row) },
-          'ticket_types' => @event.ticket_types.map { |row| ticket_type_hash(row) },
-          'images' => @event.event_media.order(:position, :id).map { |row| image_hash(row, row.position) }
-        }
       end
 
       def translation_rows
@@ -89,7 +73,7 @@ module Events
           next image_error(values[:id]) unless media
           next image_error(values[:id], 'kind does not match') if values[:kind].present? && values[:kind] != media.kind
 
-          image_hash(media, values.fetch(:position, media.position))
+          Snapshot.image(media, values.fetch(:position, media.position))
         end
       end
 
@@ -155,30 +139,8 @@ module Events
         @revision.errors.add("ticket_types[#{index}].total_quantity", 'is below tickets already held')
       end
 
-      def translation_hash(row)
-        { 'locale' => row.locale, 'title' => row.title, 'description' => row.description }
-      end
-
-      def ticket_type_hash(row)
-        {
-          'id' => row.id, 'name' => row.name, 'price' => row.price, 'total_quantity' => row.total_quantity,
-          'sale_start_at' => stamp(row.sale_start_at), 'sale_end_at' => stamp(row.sale_end_at)
-        }
-      end
-
-      def image_hash(media, position)
-        {
-          'id' => media.id, 'blob_id' => (media.file.blob.id if media.file.attached?),
-          'kind' => media.kind, 'position' => position.to_i
-        }
-      end
-
       def image_error(_id, _message = 'is not an image of this event')
         nil
-      end
-
-      def stamp(time)
-        time&.utc&.iso8601(3)
       end
     end
   end

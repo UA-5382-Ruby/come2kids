@@ -134,6 +134,31 @@ RSpec.configure do |config|
             },
             required: %w[id status]
           },
+          moderation_event_revision: {
+            type: :object,
+            properties: {
+              id: { type: :integer },
+              event_id: { type: :integer },
+              status: { type: :string, enum: EventRevision::STATUSES },
+              rejection_reason: { type: :string, nullable: true },
+              reviewed_by_id: { type: :integer, nullable: true },
+              event: { type: :object },
+              submitted_by: user_summary,
+              proposed: { type: :object, description: 'The full proposed event data (revision payload)' },
+              changes: {
+                type: :array, nullable: true,
+                description: 'Changed fields with old and new values; null once the revision is decided',
+                items: {
+                  type: :object,
+                  properties: { field: { type: :string }, old: {}, new: {} },
+                  required: %w[field]
+                }
+              },
+              reviewed_at: timestamp,
+              created_at: timestamp
+            },
+            required: %w[id event_id status event proposed]
+          },
           appeal: {
             type: :object,
             properties: {

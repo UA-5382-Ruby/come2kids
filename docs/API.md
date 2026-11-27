@@ -131,6 +131,9 @@ A reason is required wherever a decision says "reason" below; a missing reason r
 | GET | `/moderation/events?status=under_review` | | Queue of new events with all translations. Filters `organization_id`, `category_id`; sort `submitted_at`, `created_at`, `start_at` |
 | POST | `/moderation/events/{id}/approve` | | `under_review → published`; only for an approved organization; creator is emailed |
 | POST | `/moderation/events/{id}/reject` | `reason` | `under_review → rejected` |
+| GET | `/moderation/event-revisions?status=under_review` | | Queue of edits of published events (FR-MOD-6). Each item has the `event` (id, title, status, organization), `submitted_by`, the full `proposed` data and `changes`: the changed fields as `{ field, old, new }`, compared with the live event (`null` once decided). `status`: any revision status or `all`. Filter `event_id`; sort `created_at`, `updated_at` |
+| POST | `/moderation/event-revisions/{id}/approve` | | `under_review → approved`: the public event is replaced (`Events::Revisions::Apply`). Only while the event is `published` and its organization approved (else `409`); a revision that no longer fits the event (e.g. it removes a ticket type that has sold since) returns `422` and stays pending. Editor is emailed |
+| POST | `/moderation/event-revisions/{id}/reject` | `reason` | `under_review → rejected`; the event stays unchanged and the editor is emailed with the reason |
 | POST | `/moderation/users/{id}/block` | `reason` | The user's tokens stop working at once; moderators cannot be blocked (`CANNOT_BLOCK_MODERATOR`) |
 | POST | `/moderation/users/{id}/unblock` | `reason` (optional) | Restores access; an open appeal is closed |
 | GET | `/moderation/appeals?status=open` | | Appeal queue (users and organizations), with the target, its block reason and `blocked_by_id`. Filter `target_type` |

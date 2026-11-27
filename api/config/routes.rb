@@ -72,6 +72,13 @@ Rails.application.routes.draw do
           end
         end
 
+        resources :event_revisions, path: 'event-revisions', only: :index do
+          member do
+            post :approve
+            post :reject
+          end
+        end
+
         resources :users, only: [] do
           member do
             post :block

@@ -14,6 +14,12 @@ class ModerationMailer < ApplicationMailer
     deliver_notification(event.created_by, "event_#{decision}", reason) { { title: event.title || "##{event.id}" } }
   end
 
+  # decision: "approved" | "rejected". Goes to the person who submitted the edit of a published event.
+  def revision_decision(revision, decision, reason = nil)
+    event = revision.event
+    deliver_notification(revision.submitted_by, "revision_#{decision}", reason) { { title: event.title || "##{event.id}" } }
+  end
+
   # action: "blocked" | "unblocked"
   def user_block_changed(user, action, reason = nil)
     deliver_notification(user, "user_#{action}", reason)
