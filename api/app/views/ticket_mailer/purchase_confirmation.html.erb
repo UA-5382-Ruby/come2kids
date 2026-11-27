@@ -1,0 +1,14 @@
+<h1><%= I18n.t('tickets.mail.purchase.heading') %></h1>
+<p><%= I18n.t('tickets.mail.purchase.greeting', name: @user.first_name) %></p>
+<p><%= I18n.t('tickets.mail.purchase.event') %>: <%= @event_title %></p>
+<p><%= I18n.t('tickets.mail.purchase.date') %>: <%= @event_when %></p>
+<p><%= I18n.t('tickets.mail.purchase.location') %>: <%= @location %></p>
+<p><%= I18n.t('tickets.mail.purchase.tickets') %>:</p>
+<ul>
+  <% @items.each do |name, quantity| %>
+    <li><%= name %> &times; <%= quantity %></li>
+  <% end %>
+</ul>
+<p><%= I18n.t('tickets.mail.purchase.total') %>: <%= @total %></p>
+<p><%= I18n.t('tickets.mail.purchase.attachments_hint') %></p>
+<p><%= I18n.t('tickets.mail.purchase.footer') %></p>

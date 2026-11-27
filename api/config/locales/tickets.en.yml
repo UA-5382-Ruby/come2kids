@@ -1,0 +1,24 @@
+en:
+  tickets:
+    pdf:
+      title: "Event ticket"
+      event: "Event"
+      date: "Date & time"
+      location: "Location"
+      ticket_type: "Ticket type"
+      holder: "Holder"
+      code: "Ticket code"
+      scan_hint: "Show this QR code at the entrance"
+      footer: "Come2Kids — valid for one person"
+    mail:
+      purchase:
+        subject: "Your event tickets"
+        heading: "Thank you for your purchase!"
+        greeting: "Hello, %{name}!"
+        event: "Event"
+        date: "Date & time"
+        location: "Location"
+        tickets: "Tickets"
+        total: "Total"
+        attachments_hint: "PDF tickets with QR codes are attached to this email."
+        footer: "Come2Kids — tickets are valid for entrance"

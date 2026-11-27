@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_26_140406) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -90,6 +90,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
     t.index ["user_id"], name: "index_company_members_on_user_id"
   end
 
+  create_table "email_outboxes", force: :cascade do |t|
+    t.string "to_email", null: false
+    t.string "template", null: false
+    t.string "dedup_key", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "status", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.text "last_error"
+    t.datetime "sent_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dedup_key"], name: "index_email_outboxes_on_dedup_key", unique: true
+    t.index ["status", "created_at"], name: "index_email_outboxes_on_status_and_created_at"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'sent'::character varying::text, 'failed'::character varying::text])", name: "chk_email_outboxes_status"
+  end
+
   create_table "event_media", force: :cascade do |t|
     t.bigint "event_id", null: false
     t.string "kind", limit: 10, null: false
@@ -101,6 +117,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
     t.index ["event_id"], name: "index_event_media_on_event_id"
     t.check_constraint "\"position\" >= 0", name: "chk_event_media_position"
     t.check_constraint "kind::text = ANY (ARRAY['banner'::character varying::text, 'gallery'::character varying::text])", name: "chk_event_media_kind"
+  end
+
+  create_table "event_reviews", force: :cascade do |t|
+    t.bigint "event_id", null: false
+    t.bigint "user_id", null: false
+    t.integer "rating", null: false
+    t.text "text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_id", "user_id"], name: "index_event_reviews_on_event_id_and_user_id", unique: true
+    t.index ["event_id"], name: "index_event_reviews_on_event_id"
+    t.index ["user_id"], name: "index_event_reviews_on_user_id"
+    t.check_constraint "rating >= 1 AND rating <= 5", name: "chk_event_reviews_rating"
   end
 
   create_table "event_revisions", force: :cascade do |t|
@@ -169,6 +198,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "average_rating", precision: 3, scale: 2
+    t.integer "reviews_count", default: 0, null: false
     t.index ["category_id"], name: "index_events_on_category_id"
     t.index ["city"], name: "index_events_on_city"
     t.index ["created_by_id"], name: "index_events_on_created_by_id"
@@ -178,6 +209,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
     t.index ["status"], name: "index_events_on_status"
     t.check_constraint "end_at > start_at", name: "chk_events_end_after_start"
     t.check_constraint "location_type IS NULL OR (location_type::text = ANY (ARRAY['offline'::character varying::text, 'online'::character varying::text]))", name: "chk_events_location_type"
+    t.check_constraint "reviews_count >= 0", name: "chk_events_reviews_count"
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'under_review'::character varying::text, 'published'::character varying::text, 'rejected'::character varying::text, 'cancelled'::character varying::text, 'cancelled_by_organizer'::character varying::text])", name: "chk_events_status"
   end
 
@@ -221,6 +253,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
+  create_table "organization_reviews", force: :cascade do |t|
+    t.bigint "organization_id", null: false
+    t.bigint "user_id", null: false
+    t.integer "rating", null: false
+    t.text "text"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "user_id"], name: "index_organization_reviews_on_organization_id_and_user_id", unique: true
+    t.index ["organization_id"], name: "index_organization_reviews_on_organization_id"
+    t.index ["user_id"], name: "index_organization_reviews_on_user_id"
+    t.check_constraint "rating >= 1 AND rating <= 5", name: "chk_organization_reviews_rating"
+  end
+
   create_table "organization_translations", force: :cascade do |t|
     t.bigint "organization_id", null: false
     t.string "locale", limit: 2, null: false
@@ -251,10 +296,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
     t.datetime "deleted_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "average_rating", precision: 3, scale: 2
+    t.integer "reviews_count", default: 0, null: false
     t.index ["approved_by_id"], name: "index_organizations_on_approved_by_id"
     t.index ["blocked_by_id"], name: "index_organizations_on_blocked_by_id"
     t.index ["slug"], name: "index_organizations_on_slug_active", unique: true, where: "(deleted_at IS NULL)"
     t.index ["status"], name: "index_organizations_on_status"
+    t.check_constraint "reviews_count >= 0", name: "chk_organizations_reviews_count"
     t.check_constraint "status::text = ANY (ARRAY['pending_approval'::character varying::text, 'approved'::character varying::text, 'rejected'::character varying::text, 'blocked'::character varying::text])", name: "chk_organizations_status"
   end
 
@@ -340,6 +388,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
   add_foreign_key "company_members", "users", column: "added_by_id", on_delete: :nullify
   add_foreign_key "company_members", "users", on_delete: :cascade
   add_foreign_key "event_media", "events", on_delete: :cascade
+  add_foreign_key "event_reviews", "events", on_delete: :cascade
+  add_foreign_key "event_reviews", "users", on_delete: :cascade
   add_foreign_key "event_revisions", "events", on_delete: :cascade
   add_foreign_key "event_revisions", "users", column: "reviewed_by_id", on_delete: :nullify
   add_foreign_key "event_revisions", "users", column: "submitted_by_id", on_delete: :restrict
@@ -354,6 +404,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_21_170353) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "events"
   add_foreign_key "orders", "users"
+  add_foreign_key "organization_reviews", "organizations", on_delete: :cascade
+  add_foreign_key "organization_reviews", "users", on_delete: :cascade
   add_foreign_key "organization_translations", "organizations", on_delete: :cascade
   add_foreign_key "organizations", "users", column: "approved_by_id", on_delete: :nullify
   add_foreign_key "organizations", "users", column: "blocked_by_id", on_delete: :nullify

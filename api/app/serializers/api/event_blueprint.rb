@@ -4,8 +4,11 @@ module Api
   class EventBlueprint < Blueprinter::Base
     identifier :id
 
-    fields :time_zone, :location_type, :address, :city, :online_url, :banner_url, :status
+    fields :time_zone, :location_type, :address, :city, :online_url, :banner_url, :status, :reviews_count
 
+    field :average_rating do |event|
+      event.average_rating&.to_f
+    end
     field :title do |event|
       event.event_translations.find { |t| t.locale == I18n.locale.to_s }&.title
     end

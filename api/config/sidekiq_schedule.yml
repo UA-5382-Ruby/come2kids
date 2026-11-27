@@ -19,3 +19,9 @@ release_expired_reservations:
   class: "ReleaseExpiredReservationsJob"
   queue: default
   description: "Release expired unpaid ticket reservations every minute"
+
+emails_process_outbox:
+  cron: "* * * * *"
+  class: "Emails::ProcessOutboxJob"
+  queue: mailers
+  description: "Every minute: enqueue missing purchase emails and deliver due outbox rows"

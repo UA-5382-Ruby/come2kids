@@ -1,0 +1,24 @@
+uk:
+  tickets:
+    pdf:
+      title: "Квиток на подію"
+      event: "Подія"
+      date: "Дата та час"
+      location: "Місце"
+      ticket_type: "Тип квитка"
+      holder: "Власник"
+      code: "Код квитка"
+      scan_hint: "Покажіть цей QR-код на вході"
+      footer: "Come2Kids — квиток дійсний для однієї особи"
+    mail:
+      purchase:
+        subject: "Ваші квитки на подію"
+        heading: "Дякуємо за покупку!"
+        greeting: "Вітаємо, %{name}!"
+        event: "Подія"
+        date: "Дата та час"
+        location: "Місце"
+        tickets: "Квитки"
+        total: "Разом"
+        attachments_hint: "PDF-квитки з QR-кодами долучено до цього листа."
+        footer: "Come2Kids — квитки дійсні для пред'явлення на вході"

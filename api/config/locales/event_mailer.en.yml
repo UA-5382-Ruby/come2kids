@@ -1,0 +1,21 @@
+en:
+  event_mailer:
+    greeting: "Hello, %{name}!"
+    reason_label: "Reason:"
+    signature: "The Come2Kids team"
+    event_cancelled:
+      subject: "Event «%{title}» cancelled"
+      heading: "Event «%{title}» cancelled."
+      body: "%{organization} cancelled the event scheduled for %{date}. Location: %{place}."
+    event_changed:
+      subject: "Event «%{title}» updated"
+      heading: "Event «%{title}» updated."
+      body: "%{organization} updated the event (%{date}, %{place}). %{changes}"
+    event_published:
+      subject: "New event from %{organization}: «%{title}»"
+      heading: "%{organization} published a new event."
+      body: "«%{title}» takes place %{date}. Location: %{place}."
+    event_reminder:
+      subject: "Reminder: «%{title}» is tomorrow"
+      heading: "Do not forget about «%{title}»."
+      body: "Starts %{date}. Location: %{place}. Organizer: %{organization}."

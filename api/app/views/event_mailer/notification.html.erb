@@ -1,0 +1,10 @@
+<h2><%= t("event_mailer.greeting", name: @recipient.first_name) %></h2>
+<p><strong><%= @heading %></strong></p>
+<p><%= @body %></p>
+
+<% if @reason %>
+  <p><%= t("event_mailer.reason_label") %></p>
+  <blockquote><%= simple_format( @reason) %></blockquote>
+<% end %>
+
+<p><%= t("event_mailer.signature") %></p>

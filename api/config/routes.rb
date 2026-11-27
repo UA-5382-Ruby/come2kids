@@ -63,6 +63,8 @@ Rails.application.routes.draw do
           end
         end
 
+
+
         resources :events, only: :index do
           member do
             post :approve
@@ -88,7 +90,8 @@ Rails.application.routes.draw do
       end
 
       # Organization events (US-5.1)
-      resources :organizations, only: [:create, :update] do
+      resources :organizations, only: [ :create, :update ] do
+        resources :reviews, only: %i[index create], controller: 'organization_reviews'
         resources :events, only: %i[index create update destroy], module: :organizations do
           member { post :submit }
           resource :revision, only: :destroy
@@ -96,6 +99,7 @@ Rails.application.routes.draw do
             collection { patch :order }
           end
           resources :tickets, only: :index, module: :events
+          resource :check_in_statistics, only: :show, module: :events
         end
         resources :managers, only: [:index, :create, :destroy],
                   controller: 'organizations/managers',
@@ -104,7 +108,11 @@ Rails.application.routes.draw do
 
       resources :events, only: [] do
         resources :orders, only: [ :create ]
+        resources :reviews, only: %i[index create], controller: 'event_reviews'
       end
+
+      resources :reviews, only: %i[update destroy], controller: 'event_reviews'
+      resources :organization_reviews, only: %i[update destroy]
 
       resources :orders, only: [ :show ] do
         get :my, on: :collection
@@ -112,6 +120,10 @@ Rails.application.routes.draw do
 
       resources :tickets, only: [ :show ] do
         get :my, on: :collection
+        member do
+          get :qr
+          get :pdf
+        end
       end
 
       if Rails.env.development?

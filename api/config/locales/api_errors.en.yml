@@ -7,3 +7,5 @@ en:
     not_found: "Record not found"
     validation_error: "Validation failed"
     internal_server_error: "An unexpected error occurred."
+    review_already_exists: "You have already reviewed this organization"
+    attendance_required: "You can only review an organization after attending one of its finished events"

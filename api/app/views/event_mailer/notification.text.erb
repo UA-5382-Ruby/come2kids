@@ -1,0 +1,12 @@
+<%= t("event_mailer.greeting", name: @recipient.first_name) %>
+
+<%= @heading %>
+
+<%= @body %>
+<% if @reason %>
+
+<%= t("event_mailer.reason_label") %>
+<%= @reason %>
+<% end %>
+
+<%= t("event_mailer.signature") %>
