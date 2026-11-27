@@ -99,6 +99,7 @@ Rails.application.routes.draw do
             collection { patch :order }
           end
           resources :tickets, only: :index, module: :events
+          resources :check_ins, only: :create, module: :events
           resource :check_in_statistics, only: :show, module: :events
         end
       end

@@ -41,6 +41,10 @@ class EventPolicy < ApplicationPolicy
     organization_member?(record)
   end
 
+  def check_in?
+    organization_member?(record)
+  end
+
   def check_in_statistics?
     organization_member?(record)
   end
