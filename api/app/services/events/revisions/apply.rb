@@ -3,7 +3,7 @@
 module Events
   module Revisions
     # Replaces the public event with an approved revision. Returns Dry::Monads::Result.
-    # EPIC-6 calls this. There is no moderator HTTP endpoint here.
+    # Moderation::DecideRevision (POST /moderation/event-revisions/{id}/approve) calls this.
     class Apply
       include Dry::Monads[:result]
 
@@ -22,7 +22,8 @@ module Events
         return deny('is not pending') unless @revision.pending?
 
         previous_start = @event.start_at
-        Event.transaction do
+        before = PublicSnapshot.take(@event)
+        changes = Event.transaction do
           apply_event
           replace_translations
           replace_ticket_types
@@ -30,13 +31,28 @@ module Events
           @event.save!
           ClearReminders.call(@event) if start_changed?(previous_start)
           @revision.update!(status: 'approved', reviewed_by: @reviewer, reviewed_at: Time.current)
+          PublicSnapshot.diff(before, PublicSnapshot.take(@event))
         end
+        notify_subscribers(changes)
         Success(@event)
       rescue ActiveRecord::RecordInvalid => e
         Failure(e.record)
       end
 
       private
+
+      # FR-EM-9, FR-SUB-3: after the commit, tell subscribers and ticket holders about a new date, time,
+      # location or price. Other edits (texts, images) send nothing.
+      # Moderation::DecideRevision calls Apply inside its own transaction, so the job waits for the outermost
+      # commit (jobs are not deferred by default here) and is dropped if the moderation decision rolls back.
+      def notify_subscribers(changes)
+        return if changes.empty?
+
+        ActiveRecord.after_all_transactions_commit do
+          Subscriptions::NotifyJob.perform_later('event_changed', @event.id,
+                                                 'revision_id' => @revision.id, 'changes' => changes)
+        end
+      end
 
       def apply_event
         @event.assign_attributes(

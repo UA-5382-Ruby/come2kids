@@ -1,0 +1,30 @@
+<%# Shared subscription email (SubscriptionMailer): heading, body, detail lines, links and unsubscribe link. %>
+<h2><%= t("subscription_mailer.greeting", name: @recipient.first_name) %></h2>
+<p><strong><%= @heading %></strong></p>
+<p><%= @body %></p>
+
+<%# Event or organization details %>
+<% if @details.any? %>
+  <ul>
+    <% @details.each do |line| %>
+      <li><%= line %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%# Links to the event page, the recipient's tickets or the organization %>
+<% @links.each do |label, url| %>
+  <p><%= link_to label, url %></p>
+<% end %>
+
+<p><%= t("subscription_mailer.signature") %></p>
+
+<%# One-click unsubscribe (FR-SUB-4), only for recipients who follow the event or organization %>
+<% if @unsubscribe_url %>
+  <p>
+    <small>
+      <%= t("subscription_mailer.unsubscribe_hint") %>
+      <%= link_to t("subscription_mailer.links.unsubscribe"), @unsubscribe_url %>
+    </small>
+  </p>
+<% end %>

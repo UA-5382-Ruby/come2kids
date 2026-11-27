@@ -15,6 +15,8 @@ class Event < ApplicationRecord
   has_many :event_status_histories, dependent: :destroy
   has_many :event_revisions, dependent: :destroy
   has_many :event_reviews, dependent: :destroy
+  has_many :subscriptions, as: :target, dependent: :delete_all
+  has_many :event_reminders, dependent: :delete_all
   has_one :pending_revision, -> { where(status: 'under_review') }, class_name: 'EventRevision'
 
   validates :status, inclusion: { in: STATUSES }

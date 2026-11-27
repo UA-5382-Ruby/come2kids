@@ -32,7 +32,12 @@ module Organizations
       translation.description = @attrs[:description] if @attrs.key?(:description)
 
       if @organization.valid? && translation.valid?
-        @organization.save!
+        changed = @organization.changed? || translation.changed?
+        Organization.transaction do
+          @organization.save!
+          translation.save!
+        end
+        notify_subscribers if changed
         Success(@organization)
       else
         @organization.errors.merge!(translation.errors)
@@ -47,6 +52,15 @@ module Organizations
     end
 
     private
+
+    # FR-SUB-2: organization info is public as soon as it is saved, so subscribers of an approved
+    # organization are told right away. The version keeps two separate edits from being deduplicated.
+    def notify_subscribers
+      return unless @organization.accepts_event_changes?
+
+      Subscriptions::NotifyJob.perform_later('organization_updated', @organization.id,
+                                             'version' => Time.current.to_f.to_s)
+    end
 
     def translation
       @translation ||= @organization.organization_translations

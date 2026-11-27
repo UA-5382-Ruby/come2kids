@@ -1,0 +1,51 @@
+uk:
+  subscriptions:
+    errors:
+      invalid_request: "Некоректний запит."
+      invalid_target_type: "має бути event або organization"
+      already_subscribed: "Ви вже підписані."
+      event_unavailable: "Підписатися можна лише на опубліковану подію."
+      organization_unavailable: "На цю організацію підписатися неможливо."
+
+  subscription_mailer:
+    greeting: "Вітаємо, %{name}!"
+    signature: "Команда Come2Kids"
+    unsubscribe_hint: "Ви отримали цей лист, бо стежите за цим на Come2Kids."
+    labels:
+      when: "Дата і час"
+      where: "Місце"
+      online: "Посилання на трансляцію"
+      contact_email: "Email"
+      phone: "Телефон"
+      website: "Вебсайт"
+    links:
+      event: "Відкрити сторінку події"
+      tickets: "Відкрити мої квитки"
+      organization: "Відкрити сторінку організації"
+      unsubscribe: "Відписатися"
+    changes:
+      schedule: "Дата і час: %{from} → %{to}"
+      location: "Місце: %{from} → %{to}"
+      price: "Ціна «%{name}»: %{from} → %{to}"
+      free: "безкоштовно"
+      none: "—"
+    new_event:
+      subject: "Нова подія від %{organization}: %{title}"
+      heading: "%{organization} опублікувала нову подію: «%{title}»."
+      body: "Перегляньте її та встигніть придбати квитки."
+    organization_updated:
+      subject: "%{name} оновила інформацію"
+      heading: "%{name} оновила свою публічну інформацію."
+      body: "Актуальні дані наведено нижче."
+    event_changed:
+      subject: "Подія «%{title}» змінилася"
+      heading: "Подія «%{title}» змінилася."
+      body: "Організатор оновив дані, наведені нижче. Уже придбані квитки залишаються дійсними."
+    event_cancelled:
+      subject: "Подію «%{title}» скасовано"
+      heading: "Організатор скасував подію «%{title}»."
+      body: "Щодо повернення коштів за квитки зверніться, будь ласка, до організатора."
+    event_reminder:
+      subject: "Нагадування: «%{title}» уже завтра"
+      heading: "«%{title}» починається менш ніж за 24 години."
+      body: "Чекаємо на вас!"

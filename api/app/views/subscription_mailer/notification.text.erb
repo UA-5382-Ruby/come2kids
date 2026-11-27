@@ -1,0 +1,21 @@
+<%= t("subscription_mailer.greeting", name: @recipient.first_name) %>
+
+<%= @heading %>
+
+<%= @body %>
+<% if @details.any? %>
+
+<% @details.each do |line| %>
+- <%= line %>
+<% end %>
+<% end %>
+<% @links.each do |label, url| %>
+
+<%= label %>: <%= url %>
+<% end %>
+
+<%= t("subscription_mailer.signature") %>
+<% if @unsubscribe_url %>
+
+<%= t("subscription_mailer.unsubscribe_hint") %> <%= t("subscription_mailer.links.unsubscribe") %>: <%= @unsubscribe_url %>
+<% end %>

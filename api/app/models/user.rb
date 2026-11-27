@@ -15,6 +15,8 @@ class User < ApplicationRecord
   has_many :appeals, as: :target, dependent: :destroy
   has_many :event_reviews, dependent: :destroy
   has_many :organization_reviews, dependent: :destroy
+  has_many :subscriptions, dependent: :destroy
+  has_many :event_reminders, dependent: :delete_all
 
   normalizes :email, with: ->(email) { email.strip.downcase }
 

@@ -1,0 +1,51 @@
+en:
+  subscriptions:
+    errors:
+      invalid_request: "The request is invalid."
+      invalid_target_type: "must be event or organization"
+      already_subscribed: "You are already subscribed."
+      event_unavailable: "You can only subscribe to a published event."
+      organization_unavailable: "You cannot subscribe to this organization."
+
+  subscription_mailer:
+    greeting: "Hello, %{name}!"
+    signature: "The Come2Kids team"
+    unsubscribe_hint: "You receive this email because you follow it on Come2Kids."
+    labels:
+      when: "Date and time"
+      where: "Location"
+      online: "Online link"
+      contact_email: "Email"
+      phone: "Phone"
+      website: "Website"
+    links:
+      event: "Open the event page"
+      tickets: "Open my tickets"
+      organization: "Open the organization page"
+      unsubscribe: "Unsubscribe"
+    changes:
+      schedule: "Date and time: %{from} → %{to}"
+      location: "Location: %{from} → %{to}"
+      price: "Price of \"%{name}\": %{from} → %{to}"
+      free: "free"
+      none: "—"
+    new_event:
+      subject: "New event from %{organization}: %{title}"
+      heading: "%{organization} has published a new event: \"%{title}\"."
+      body: "Have a look and get your tickets while they are available."
+    organization_updated:
+      subject: "%{name} has updated its information"
+      heading: "%{name} has updated its public information."
+      body: "Here are the current details."
+    event_changed:
+      subject: "The event \"%{title}\" has changed"
+      heading: "The event \"%{title}\" has changed."
+      body: "The organizer updated the details below. Tickets you already have stay valid."
+    event_cancelled:
+      subject: "The event \"%{title}\" has been cancelled"
+      heading: "The event \"%{title}\" has been cancelled by the organizer."
+      body: "Please contact the organizer about returning the money for your tickets."
+    event_reminder:
+      subject: "Reminder: \"%{title}\" is tomorrow"
+      heading: "\"%{title}\" starts in less than 24 hours."
+      body: "We look forward to seeing you there!"

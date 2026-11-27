@@ -1,16 +1,11 @@
 # frozen_string_literal: true
 
 module Events
-  # Deletes reminder rows for an event when its start time changes.
-  # Does nothing until EPIC-12 creates event_reminders.
+  # Deletes reminder rows for an event when its start time changes (FR-REM-4), so the reminder job
+  # sends a new reminder for the new date.
   class ClearReminders
-    TABLE = 'event_reminders'
-
     def self.call(event)
-      return unless ActiveRecord::Base.connection.data_source_exists?(TABLE)
-
-      sql = ActiveRecord::Base.sanitize_sql_array([ "DELETE FROM #{TABLE} WHERE event_id = ?", event.id ])
-      ActiveRecord::Base.connection.execute(sql)
+      EventReminder.where(event_id: event.id).delete_all
     end
   end
 end

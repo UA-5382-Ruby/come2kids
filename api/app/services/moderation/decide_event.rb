@@ -32,6 +32,8 @@ module Moderation
       ModerationLog.record!(entity: event, moderator: moderator, decision: decision, reason: reason)
 
       notify(:event_decision, event, decision, reason)
+      # FR-SUB-2: organization subscribers learn about the new event once it is public.
+      after_commit { Subscriptions::NotifyJob.perform_later('new_event', event.id) } if decision == 'approved'
       track(action: "moderation.event.#{decision}", actor: moderator, entity: event, metadata: { reason: reason })
       event
     end

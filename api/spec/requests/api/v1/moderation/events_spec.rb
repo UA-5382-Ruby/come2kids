@@ -91,6 +91,11 @@ RSpec.describe 'Moderation: events', type: :request do
           it 'emails the creator' do
             expect { send_documented_request }.to have_enqueued_mail(ModerationMailer, :event_decision)
           end
+
+          it 'notifies organization subscribers about the new event (FR-SUB-2)' do
+            expect { send_documented_request }
+              .to have_enqueued_job(Subscriptions::NotifyJob).with('new_event', event.id)
+          end
         end
 
         response '401', 'not authenticated' do
