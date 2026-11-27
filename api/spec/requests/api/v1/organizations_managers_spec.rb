@@ -22,7 +22,6 @@ RSpec.describe 'Api::V1::Organizations::Managers', type: :request do
   path '/api/v1/organizations/{organization_id}/managers' do
     parameter name: :organization_id, in: :path, type: :integer, required: true
 
-    # ✅ ТІЛЬКИ параметр Authorization, БЕЗ security
     parameter name: 'Authorization', in: :header, type: :string, required: true,
               description: 'Bearer token'
 

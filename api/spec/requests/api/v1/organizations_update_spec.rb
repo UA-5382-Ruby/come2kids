@@ -16,7 +16,6 @@ RSpec.describe 'Api::V1::Organizations', type: :request do
       consumes 'application/json'
       produces 'application/json'
 
-      # ✅ ЯВНЕ ОГОЛОШЕННЯ ЗАГОЛОВКА
       parameter name: 'Authorization', in: :header, type: :string, required: true,
                 description: 'Bearer token'
 

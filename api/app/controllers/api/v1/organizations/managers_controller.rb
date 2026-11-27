@@ -10,7 +10,6 @@ module Api
         def index
           authorize @organization, :show_managers?
 
-          # ✅ Використовуємо includes замість select — це безпечніше
           members = @organization.company_members
                                  .joins(:role)
                                  .where(roles: { key: 'manager' })

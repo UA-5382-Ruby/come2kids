@@ -39,7 +39,6 @@ module Organizations
         Failure(@organization.errors)
       end
     rescue ActiveRecord::RecordInvalid => e
-      # ✅ Безпечна обробка: якщо record nil — повертаємо базову помилку
       if e.record&.respond_to?(:errors)
         Failure(e.record.errors)
       else

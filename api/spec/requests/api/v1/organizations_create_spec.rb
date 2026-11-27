@@ -19,7 +19,6 @@ RSpec.describe 'Organizations: create', type: :request do
       consumes 'application/json'
       produces 'application/json'
 
-      # ✅ ЯВНЕ ОГОЛОШЕННЯ ЗАГОЛОВКА (обов'язково для Rswag 2.17)
       parameter name: 'Authorization', in: :header, type: :string, required: true,
                 description: 'Bearer token'
 
