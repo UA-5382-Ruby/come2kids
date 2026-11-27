@@ -37,14 +37,6 @@ en:
       subject: "Your event \"%{title}\" was not published"
       heading: "Your event \"%{title}\" was rejected by a moderator."
       body: "You can edit the event and submit it for moderation again."
-    revision_approved:
-      subject: "Your changes to \"%{title}\" have been published"
-      heading: "A moderator approved your changes to the event \"%{title}\"."
-      body: "The updated event is now visible in the catalog."
-    revision_rejected:
-      subject: "Your changes to \"%{title}\" were not published"
-      heading: "A moderator rejected your changes to the event \"%{title}\"."
-      body: "The event stays as it was. You can edit it again and submit new changes."
     user_blocked:
       subject: "Your Come2Kids account has been blocked"
       heading: "Your account has been blocked."

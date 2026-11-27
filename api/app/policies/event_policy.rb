@@ -41,6 +41,10 @@ class EventPolicy < ApplicationPolicy
     organization_member?(record)
   end
 
+  def check_in_statistics?
+    organization_member?(record)
+  end
+
   def revise?
     return false unless organization_for(record)&.approved?
     return false unless organization_member?(record)
