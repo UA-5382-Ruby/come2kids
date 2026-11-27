@@ -22,6 +22,11 @@ en:
   errors:
     organizations:
       already_owner: "You can only own one organization at a time."
+      user_not_found: "User with this email address was not found."
+      already_member: "This user is already a member of the organization."
+      cannot_add_owner: "The owner of the organization cannot be added as a manager."
+      not_a_member: "This user is not a member of the organization."
+      cannot_remove_owner: "You cannot remove the owner of the organization."
 
   api_errors:
     validation_error: "Validation failed."
@@ -49,6 +54,11 @@ en:
       link_hint: "If the button does not work, copy this link into your browser:"
       expires: "The link is valid for %{hours} hours."
       ignore: "If you did not sign up for Come2Kids, simply ignore this email."
+    manager_added:
+      subject: "You have been added as a manager to %{org_name}"
+      greeting: "Hello, %{name}!"
+      intro: "%{added_by} has added you as a manager to the organization \"%{org_name}\" on Come2Kids."
+      cta: "You can now manage events and organization settings."
     password_reset:
       subject: "Reset your password on Come2Kids"
       greeting: "Hello, %{name}!"
@@ -61,3 +71,5 @@ en:
   organizations:
     requested: "Organization creation request has been submitted and is pending moderation."
     updated: "Organization successfully updated."
+    manager_added: "Manager successfully added."
+    manager_removed: "Manager successfully removed."

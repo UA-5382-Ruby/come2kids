@@ -97,6 +97,9 @@ Rails.application.routes.draw do
           end
           resources :tickets, only: :index, module: :events
         end
+        resources :managers, only: [:index, :create, :destroy],
+                  controller: 'organizations/managers',
+                  param: :user_id
       end
 
       resources :events, only: [] do
