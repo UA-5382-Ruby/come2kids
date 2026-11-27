@@ -5,7 +5,12 @@ module Emails
     queue_as :mailers
 
     DISPATCH = {
-      Emails::EnqueuePurchase::TEMPLATE => ->(row) { TicketMailer.purchase_confirmation(row) }
+      Emails::EnqueuePurchase::TEMPLATE => ->(row) { TicketMailer.purchase_confirmation(row) },
+      Subscriptions::Notifier::NEW_EVENT => ->(row) { SubscriptionMailer.new_event(row) },
+      Subscriptions::Notifier::ORGANIZATION_UPDATED => ->(row) { SubscriptionMailer.organization_updated(row) },
+      Subscriptions::Notifier::EVENT_CHANGED => ->(row) { SubscriptionMailer.event_changed(row) },
+      Subscriptions::Notifier::EVENT_CANCELLED => ->(row) { SubscriptionMailer.event_cancelled(row) },
+      Subscriptions::Notifier::EVENT_REMINDER => ->(row) { SubscriptionMailer.event_reminder(row) }
     }.freeze
 
     def perform

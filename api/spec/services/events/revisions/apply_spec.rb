@@ -57,11 +57,59 @@ RSpec.describe Events::Revisions::Apply do
     expect(event.reload.city).to eq('Київ')
   end
 
-  it 'still approves when the start time changes and reminders are not stored yet' do
+  it 'clears reminder records when the start time changes' do
+    create(:event_reminder, event: event)
     later = event.start_at + 1.day
     revision = revision_for(start_at: later, end_at: later + 2.hours)
 
     expect(described_class.call(revision: revision, reviewer: moderator)).to be_success
     expect(event.reload.start_at).to be_within(1.second).of(later)
+    expect(EventReminder.where(event: event)).to be_empty
+  end
+
+  it 'keeps reminder records when the start time stays the same' do
+    create(:event_reminder, event: event)
+
+    described_class.call(revision: revision_for, reviewer: moderator)
+
+    expect(EventReminder.where(event: event).count).to eq(1)
+  end
+
+  describe 'subscriber notifications (FR-SUB-3)' do
+    include ActiveJob::TestHelper
+
+    it 'enqueues one notification with the changed location and price' do
+      revision = revision_for
+
+      expect { described_class.call(revision: revision, reviewer: moderator) }
+        .to have_enqueued_job(Subscriptions::NotifyJob).with(
+          'event_changed', event.id,
+          hash_including(
+            'revision_id' => revision.id,
+            'changes' => hash_including(
+              'location' => hash_including('to' => hash_including('city' => 'Львів')),
+              'prices' => { 'from' => { 'Дорослий' => 100 }, 'to' => { 'Дорослий' => 250 } }
+            )
+          )
+        )
+    end
+
+    it 'enqueues nothing when date, time, location and price stay the same' do
+      revision = revision_for(city: 'Київ')
+      revision.update!(payload: revision.payload.merge(
+        'ticket_types' => [ revision.payload['ticket_types'].first.merge('price' => 100) ]
+      ))
+
+      expect { described_class.call(revision: revision, reviewer: moderator) }
+        .not_to have_enqueued_job(Subscriptions::NotifyJob)
+    end
+
+    it 'enqueues nothing when the revision is not applied' do
+      revision = revision_for
+      revision.update!(status: 'withdrawn')
+
+      expect { described_class.call(revision: revision, reviewer: moderator) }
+        .not_to have_enqueued_job(Subscriptions::NotifyJob)
+    end
   end
 end

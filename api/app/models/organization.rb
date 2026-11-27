@@ -14,6 +14,7 @@ class Organization < ApplicationRecord
   has_many :company_members, dependent: :destroy
   has_many :appeals, as: :target, dependent: :destroy
   has_many :organization_reviews, dependent: :destroy
+  has_many :subscriptions, as: :target, dependent: :delete_all
 
   # NOTE: Менеджери: тільки membership з role_id = MANAGER_ID
   # Якщо в майбутньому з'являться нові ролі (бухгалтер, редактор),

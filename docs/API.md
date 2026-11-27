@@ -58,6 +58,8 @@ The initial error-code catalog is:
 | `APPEAL_ALREADY_OPEN` | 409 |
 | `APPEAL_COOLDOWN` | 429 |
 | `APPEAL_TOKEN_SCOPE` | 403 |
+| `SUBSCRIPTION_ALREADY_EXISTS` | 409 |
+| `SUBSCRIPTION_TARGET_UNAVAILABLE` | 422 |
 
 ---
 
@@ -162,6 +164,32 @@ Managers cannot appeal.
 | --- | --- | --- | --- |
 | POST | `/appeals` | `message` (1–2000 chars), `organization_id` (organization appeals) | `201` with the appeal. `409 NOT_BLOCKED`, `409 APPEAL_ALREADY_OPEN`, or `429 APPEAL_COOLDOWN` with `details: [{ "field": "next_appeal_allowed_at", "message": "<ISO 8601>" }]` |
 | GET | `/appeals/current` | `organization_id` (optional) | Block state, the latest appeal with its decision, `can_submit` and `next_appeal_allowed_at` |
+
+## Subscriptions and Reminders (EPIC-12)
+
+All paths are under `/api/v1`. Every endpoint except the one-click unsubscribe needs a Bearer access token.
+
+| Method | Path | Body / query | Notes |
+| --- | --- | --- | --- |
+| POST | `/subscriptions` | `target_type` (`event` or `organization`), `target_id` | `201`. `409 SUBSCRIPTION_ALREADY_EXISTS`; `422 SUBSCRIPTION_TARGET_UNAVAILABLE` for an unpublished, cancelled or deleted event, or an organization that is not approved (blocked, pending, rejected) |
+| GET | `/subscriptions/my` | `target_type` (optional), `page`, `pageSize` | Own subscriptions with `target_name` in the request locale; sort `created_at` |
+| DELETE | `/subscriptions/{id}` | | `204`; `403` for another user's subscription |
+| GET | `/subscriptions/unsubscribe` | `token` | Guest. The signed token from the email link; `200 { data: { unsubscribed: true } }`, also when repeated. `422 TOKEN_INVALID` for a tampered token |
+
+Emails (sent through `email_outboxes`, delivered by `Emails::ProcessOutboxJob`, in the recipient's language):
+
+| Trigger | Recipients |
+| --- | --- |
+| Moderator approves a new event | Organization subscribers |
+| Owner/manager updates the public info of an approved organization | Organization subscribers |
+| An approved revision changes the date/time, location or ticket prices (`Events::Revisions::Apply`) | Event subscribers and holders of valid tickets |
+| Organizer cancels a published event with tickets | Event subscribers and holders of valid tickets |
+| Hourly `Events::SendRemindersJob`: event starts within 24 hours | Event subscribers and holders of valid tickets (not organization subscribers) |
+
+A user who both follows an event and holds a ticket gets one email. Blocked, deactivated and deleted users get
+nothing. Subscribers get an unsubscribe link (`{FRONTEND_URL}/unsubscribe?token=...`; the frontend calls the endpoint
+above). `event_reminders` (unique `event_id` + `user_id`) prevents duplicate reminders and is cleared when an approved
+revision moves the start time, so a new reminder goes out for the new date.
 
 ### Enforcement helpers for other features
 

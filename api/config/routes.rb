@@ -110,6 +110,14 @@ Rails.application.routes.draw do
       resources :reviews, only: %i[update destroy], controller: 'event_reviews'
       resources :organization_reviews, only: %i[update destroy]
 
+      # Subscriptions to events and organizations (US-12.1)
+      resources :subscriptions, only: %i[create destroy] do
+        collection do
+          get :my
+          get :unsubscribe
+        end
+      end
+
       resources :orders, only: [ :show ] do
         get :my, on: :collection
       end

@@ -20,6 +20,12 @@ release_expired_reservations:
   queue: default
   description: "Release expired unpaid ticket reservations every minute"
 
+events_send_reminders:
+  cron: "0 * * * *"
+  class: "Events::SendRemindersJob"
+  queue: default
+  description: "Hourly: queue reminder emails for events starting within 24 hours (US-12.3)"
+
 emails_process_outbox:
   cron: "* * * * *"
   class: "Emails::ProcessOutboxJob"

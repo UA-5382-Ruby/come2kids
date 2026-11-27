@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_25_203609) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_26_100100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -117,6 +117,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_203609) do
     t.index ["event_id"], name: "index_event_media_on_event_id"
     t.check_constraint "\"position\" >= 0", name: "chk_event_media_position"
     t.check_constraint "kind::text = ANY (ARRAY['banner'::character varying::text, 'gallery'::character varying::text])", name: "chk_event_media_kind"
+  end
+
+  create_table "event_reminders", force: :cascade do |t|
+    t.bigint "event_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "sent_at", null: false
+    t.index ["event_id", "user_id"], name: "index_event_reminders_on_event_id_and_user_id", unique: true
+    t.index ["user_id"], name: "index_event_reminders_on_user_id"
   end
 
   create_table "event_reviews", force: :cascade do |t|
@@ -309,6 +317,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_203609) do
     t.index ["key"], name: "index_roles_on_key", unique: true
   end
 
+  create_table "subscriptions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "target_type", limit: 20, null: false
+    t.bigint "target_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["target_type", "target_id"], name: "index_subscriptions_on_target_type_and_target_id"
+    t.index ["user_id", "target_type", "target_id"], name: "index_subscriptions_on_user_id_and_target_type_and_target_id", unique: true
+    t.index ["user_id"], name: "index_subscriptions_on_user_id"
+    t.check_constraint "target_type::text = ANY (ARRAY['Event'::character varying::text, 'Organization'::character varying::text])", name: "chk_subscriptions_target_type"
+  end
+
   create_table "ticket_types", force: :cascade do |t|
     t.bigint "event_id", null: false
     t.string "name", limit: 200, null: false
@@ -382,6 +402,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_203609) do
   add_foreign_key "company_members", "users", column: "added_by_id", on_delete: :nullify
   add_foreign_key "company_members", "users", on_delete: :cascade
   add_foreign_key "event_media", "events", on_delete: :cascade
+  add_foreign_key "event_reminders", "events", on_delete: :cascade
+  add_foreign_key "event_reminders", "users", on_delete: :cascade
   add_foreign_key "event_reviews", "events", on_delete: :cascade
   add_foreign_key "event_reviews", "users", on_delete: :cascade
   add_foreign_key "event_revisions", "events", on_delete: :cascade
@@ -403,6 +425,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_203609) do
   add_foreign_key "organization_translations", "organizations", on_delete: :cascade
   add_foreign_key "organizations", "users", column: "approved_by_id", on_delete: :nullify
   add_foreign_key "organizations", "users", column: "blocked_by_id", on_delete: :nullify
+  add_foreign_key "subscriptions", "users", on_delete: :cascade
   add_foreign_key "ticket_types", "events", on_delete: :cascade
   add_foreign_key "tickets", "events"
   add_foreign_key "tickets", "order_items"

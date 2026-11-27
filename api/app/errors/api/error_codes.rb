@@ -25,6 +25,10 @@ module Api
     APPEAL_COOLDOWN = 'APPEAL_COOLDOWN'
     APPEAL_TOKEN_SCOPE = 'APPEAL_TOKEN_SCOPE'
 
+    # Subscriptions (EPIC-12)
+    SUBSCRIPTION_ALREADY_EXISTS = 'SUBSCRIPTION_ALREADY_EXISTS'
+    SUBSCRIPTION_TARGET_UNAVAILABLE = 'SUBSCRIPTION_TARGET_UNAVAILABLE'
+
     HTTP_STATUSES = {
       BAD_REQUEST => :bad_request,
       UNAUTHORIZED => :unauthorized,
@@ -43,7 +47,9 @@ module Api
       NOT_BLOCKED => :conflict,
       APPEAL_ALREADY_OPEN => :conflict,
       APPEAL_COOLDOWN => :too_many_requests,
-      APPEAL_TOKEN_SCOPE => :forbidden
+      APPEAL_TOKEN_SCOPE => :forbidden,
+      SUBSCRIPTION_ALREADY_EXISTS => :conflict,
+      SUBSCRIPTION_TARGET_UNAVAILABLE => :unprocessable_entity
     }.freeze
   end
 end
