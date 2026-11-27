@@ -3,7 +3,7 @@
 module Events
   module Revisions
     # Replaces the public event with an approved revision. Returns Dry::Monads::Result.
-    # EPIC-6 calls this. There is no moderator HTTP endpoint here.
+    # Moderation::DecideRevision (POST /moderation/event-revisions/{id}/approve) calls this.
     class Apply
       include Dry::Monads[:result]
 

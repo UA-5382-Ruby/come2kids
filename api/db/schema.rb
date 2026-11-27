@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_25_203609) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_27_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -221,7 +221,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_25_203609) do
     t.index ["entity_type", "entity_id", "created_at"], name: "index_moderation_logs_on_entity"
     t.index ["moderator_id"], name: "index_moderation_logs_on_moderator_id"
     t.check_constraint "decision::text = ANY (ARRAY['approved'::character varying::text, 'rejected'::character varying::text, 'blocked'::character varying::text, 'unblocked'::character varying::text, 'appeal_submitted'::character varying::text, 'appeal_accepted'::character varying::text, 'appeal_rejected'::character varying::text])", name: "chk_moderation_logs_decision"
-    t.check_constraint "entity_type::text = ANY (ARRAY['User'::character varying::text, 'Organization'::character varying::text, 'Event'::character varying::text, 'Appeal'::character varying::text])", name: "chk_moderation_logs_entity_type"
+    t.check_constraint "entity_type::text = ANY (ARRAY['User'::character varying::text, 'Organization'::character varying::text, 'Event'::character varying::text, 'EventRevision'::character varying::text, 'Appeal'::character varying::text])", name: "chk_moderation_logs_entity_type"
   end
 
   create_table "order_items", force: :cascade do |t|
