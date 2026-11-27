@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'swagger_helper'
-
+# rubocop:disable RSpec/MultipleMemoizedHelpers
 RSpec.describe 'Api::V1::Organizations::Managers', type: :request do
   before do
     Role.find_or_create_by!(key: 'owner') { |r| r.name_uk = 'Власник'; r.name_en = 'Owner' }
@@ -130,3 +130,4 @@ RSpec.describe 'Api::V1::Organizations::Managers', type: :request do
     end
   end
 end
+# rubocop:enable RSpec/MultipleMemoizedHelpers
