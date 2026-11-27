@@ -23,6 +23,8 @@ module Organizations
     end
 
     def call
+      return Failure(:organization_blocked) if @organization.blocked?
+
       org_attrs = @attrs.slice(*ORGANIZATION_ATTRIBUTES)
       @organization.assign_attributes(org_attrs) if org_attrs.any?
 
@@ -37,7 +39,11 @@ module Organizations
         Failure(@organization.errors)
       end
     rescue ActiveRecord::RecordInvalid => e
-      Failure(e.record.errors)
+      if e.record&.respond_to?(:errors)
+        Failure(e.record.errors)
+      else
+        Failure({ base: e.message })
+      end
     end
 
     private

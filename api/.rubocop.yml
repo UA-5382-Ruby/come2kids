@@ -58,3 +58,6 @@ RSpec/ExampleLength:
 RSpec/SpecFilePathFormat:
   Exclude:
     - 'spec/errors/application_error_spec.rb'
+RSpec/VariableName:
+  AllowedPatterns:
+    - '\AAuthorization\z'

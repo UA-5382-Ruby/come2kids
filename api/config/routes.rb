@@ -102,6 +102,9 @@ Rails.application.routes.draw do
           resources :check_ins, only: :create, module: :events
           resource :check_in_statistics, only: :show, module: :events
         end
+        resources :managers, only: [:index, :create, :destroy],
+                  controller: 'organizations/managers',
+                  param: :user_id
       end
 
       resources :events, only: [] do

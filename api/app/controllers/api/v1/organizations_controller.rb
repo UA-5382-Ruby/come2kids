@@ -80,7 +80,7 @@ module Api
           error_details = if error.respond_to?(:map)
                             error.map { |e| { field: e.attribute, error: e.type } }
           else
-                            error.messages.map { |field, messages| { field: field, error: messages.join(', ') } }
+            error.messages.map { |field, messages| { field: field, error: messages.join(', ') } }
           end
 
           render json: {

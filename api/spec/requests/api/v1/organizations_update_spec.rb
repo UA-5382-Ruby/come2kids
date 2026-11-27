@@ -16,11 +16,11 @@ RSpec.describe 'Api::V1::Organizations', type: :request do
       consumes 'application/json'
       produces 'application/json'
 
-      security [ bearerAuth: [] ]
+      parameter name: 'Authorization', in: :header, type: :string, required: true,
+                description: 'Bearer token'
 
       parameter name: :id, in: :path, type: :integer, required: true, description: 'Organization ID'
-      parameter name: 'Authorization', in: :header, type: :string, required: false, getter: :authorization,
-                description: 'Bearer access token'
+
       parameter name: :body, in: :body, schema: {
         type: :object,
         properties: {
@@ -42,7 +42,7 @@ RSpec.describe 'Api::V1::Organizations', type: :request do
 
       response '200', 'Organization updated successfully' do
         let(:organization) { create_organization_with_owner }
-        let(:authorization) { bearer_for(owner_of(organization)) }
+        let(:'Authorization') { "Bearer #{JwtService.encode(owner_of(organization))}" }
         let(:id) { organization.id }
         let(:body) do
           { organization: { name: 'Updated Org', description: 'New desc', contact_email: 'updated@example.com' } }
@@ -54,7 +54,7 @@ RSpec.describe 'Api::V1::Organizations', type: :request do
       response '401', 'Unauthorized' do
         let(:organization) { create_organization_with_owner }
         let(:id) { organization.id }
-        let(:authorization) { 'Bearer invalid_token' }
+        let(:'Authorization') { 'Bearer invalid_token' }
         let(:body) { { organization: { name: 'Hacked' } } }
 
         run_test!
@@ -63,7 +63,7 @@ RSpec.describe 'Api::V1::Organizations', type: :request do
       response '403', 'Forbidden - user is not the owner' do
         let(:organization) { create_organization_with_owner }
         let(:id) { organization.id }
-        let(:authorization) { bearer_for(create(:user)) }
+        let(:'Authorization') { "Bearer #{JwtService.encode(create(:user))}" }
         let(:body) { { organization: { name: 'Hacked Name' } } }
 
         run_test!
@@ -71,7 +71,7 @@ RSpec.describe 'Api::V1::Organizations', type: :request do
 
       response '404', 'Organization not found' do
         let(:id) { 999_999 }
-        let(:authorization) { bearer_for(create(:user)) }
+        let(:'Authorization') { "Bearer #{JwtService.encode(create(:user))}" }
         let(:body) { { organization: { name: 'Updated Org' } } }
 
         run_test!
@@ -80,16 +80,12 @@ RSpec.describe 'Api::V1::Organizations', type: :request do
       response '422', 'Validation failed' do
         let(:organization) { create_organization_with_owner }
         let(:id) { organization.id }
-        let(:authorization) { bearer_for(owner_of(organization)) }
+        let(:'Authorization') { "Bearer #{JwtService.encode(owner_of(organization))}" }
         let(:body) { { organization: { name: '', contact_email: 'not-an-email' } } }
 
         run_test!
       end
     end
-  end
-
-  def bearer_for(user)
-    "Bearer #{JwtService.encode(user)}"
   end
 
   def owner_of(organization)
