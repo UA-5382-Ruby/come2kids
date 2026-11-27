@@ -27,6 +27,8 @@ class Organization < ApplicationRecord
           class_name: 'CompanyMember'
   has_one :owner, through: :owner_membership, source: :user
 
+  has_one_attached :logo
+
   validates :slug, presence: true, uniqueness: { case_sensitive: false }
   validates :contact_email, presence: true
   validates :status, inclusion: { in: STATUSES }
