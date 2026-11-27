@@ -4,7 +4,6 @@ require 'swagger_helper'
 
 RSpec.describe 'Organizations: create', type: :request do
   let(:user) { create(:user) }
-  let(:authorization) { "Bearer #{JwtService.encode(user)}" }
   let(:json) { response.parsed_body }
 
   before do
@@ -15,14 +14,14 @@ RSpec.describe 'Organizations: create', type: :request do
   end
 
   path '/api/v1/organizations' do
-    parameter name: 'Authorization', in: :header, type: :string, required: false, getter: :authorization,
-              description: 'Bearer access token'
-
     post 'Requests organization creation' do
       tags 'Organizations'
       consumes 'application/json'
       produces 'application/json'
-      security [ bearerAuth: [] ]
+
+      # ✅ ЯВНЕ ОГОЛОШЕННЯ ЗАГОЛОВКА (обов'язково для Rswag 2.17)
+      parameter name: 'Authorization', in: :header, type: :string, required: true,
+                description: 'Bearer token'
 
       parameter name: :body, in: :body, schema: {
         type: :object,
@@ -41,6 +40,7 @@ RSpec.describe 'Organizations: create', type: :request do
       }
 
       response '201', 'Organization request created successfully' do
+        let(:'Authorization') { "Bearer #{JwtService.encode(user)}" }
         let(:body) do
           { organization: { name: 'New Org', description: 'Test desc', contact_email: 'neworg@example.com' } }
         end
@@ -49,6 +49,7 @@ RSpec.describe 'Organizations: create', type: :request do
       end
 
       response '422', 'Validation failed or user is already an owner' do
+        let(:'Authorization') { "Bearer #{JwtService.encode(user)}" }
         let(:body) do
           { organization: { name: '', description: 'Test desc', contact_email: 'x@example.com' } }
         end
@@ -59,7 +60,7 @@ RSpec.describe 'Organizations: create', type: :request do
       response '401', 'Unauthorized' do
         schema '$ref' => '#/components/schemas/error'
 
-        let(:authorization) { nil }
+        let(:'Authorization') { 'Bearer invalid_token' }
         let(:body) do
           { organization: { name: 'New Org', description: 'Test desc', contact_email: 'x@example.com' } }
         end

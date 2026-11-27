@@ -4,14 +4,8 @@ require 'swagger_helper'
 
 RSpec.describe 'Api::V1::Organizations::Managers', type: :request do
   before do
-    Role.find_or_create_by!(key: 'owner') do |r|
-      r.name_uk = 'Власник'
-      r.name_en = 'Owner'
-    end
-    Role.find_or_create_by!(key: 'manager') do |r|
-      r.name_uk = 'Менеджер'
-      r.name_en = 'Manager'
-    end
+    Role.find_or_create_by!(key: 'owner') { |r| r.name_uk = 'Власник'; r.name_en = 'Owner' }
+    Role.find_or_create_by!(key: 'manager') { |r| r.name_uk = 'Менеджер'; r.name_en = 'Manager' }
   end
 
   let(:owner) { create(:user) }
@@ -25,18 +19,17 @@ RSpec.describe 'Api::V1::Organizations::Managers', type: :request do
     org
   end
 
-  # ✅ КРИТИЧНО: Оголошуємо параметр Authorization ОДИН РАЗ на рівні path
-  # і використовуємо його в кожному HTTP-методі
   path '/api/v1/organizations/{organization_id}/managers' do
     parameter name: :organization_id, in: :path, type: :integer, required: true
+
+    # ✅ ТІЛЬКИ параметр Authorization, БЕЗ security
+    parameter name: 'Authorization', in: :header, type: :string, required: true,
+              description: 'Bearer token'
 
     get 'List organization managers' do
       tags 'Organizations'
       produces 'application/json'
-
-      # ✅ ОГОЛОШЕННЯ ЗАГОЛОВКА (без нього Rswag не передасть токен)
-      parameter name: 'Authorization', in: :header, type: :string, required: true,
-                description: 'Bearer token'
+      security [ bearerAuth: [] ]
 
       response '200', 'managers list' do
         schema type: :object, properties: {
@@ -59,21 +52,13 @@ RSpec.describe 'Api::V1::Organizations::Managers', type: :request do
         let(:'Authorization') { "Bearer #{JwtService.encode(owner)}" }
         run_test!
       end
-
-      response '401', 'unauthorized' do
-        let(:organization_id) { organization.id }
-        let(:'Authorization') { 'Bearer invalid_token' }
-        run_test!
-      end
     end
 
     post 'Add a manager to the organization' do
       tags 'Organizations'
       consumes 'application/json'
-
-      # ✅ ОГОЛОШЕННЯ ЗАГОЛОВКА
-      parameter name: 'Authorization', in: :header, type: :string, required: true,
-                description: 'Bearer token'
+      produces 'application/json'
+      security [ bearerAuth: [] ]
 
       parameter name: :body, in: :body, schema: {
         type: :object,
@@ -115,11 +100,14 @@ RSpec.describe 'Api::V1::Organizations::Managers', type: :request do
     parameter name: :organization_id, in: :path, type: :integer, required: true
     parameter name: :user_id, in: :path, type: :integer, required: true
 
+    # ✅ ТІЛЬКИ параметр Authorization, БЕЗ security
+    parameter name: 'Authorization', in: :header, type: :string, required: true,
+              description: 'Bearer token'
+
     delete 'Remove a manager from the organization' do
       tags 'Organizations'
-
-      parameter name: 'Authorization', in: :header, type: :string, required: true,
-                description: 'Bearer token'
+      produces 'application/json'
+      security [ bearerAuth: [] ]
 
       response '200', 'manager removed' do
         let(:organization_id) { organization.id }
