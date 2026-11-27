@@ -43,8 +43,8 @@ module Events
 
       # FR-EM-9, FR-SUB-3: after the commit, tell subscribers and ticket holders about a new date, time,
       # location or price. Other edits (texts, images) send nothing.
-      # A caller may run Apply inside its own transaction, so the job waits for the outermost commit
-      # (jobs are not deferred by default here) and is dropped if that transaction rolls back.
+      # Moderation::DecideRevision calls Apply inside its own transaction, so the job waits for the outermost
+      # commit (jobs are not deferred by default here) and is dropped if the moderation decision rolls back.
       def notify_subscribers(changes)
         return if changes.empty?
 

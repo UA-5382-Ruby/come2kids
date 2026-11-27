@@ -108,7 +108,7 @@ RSpec.describe 'Moderation: event revisions', type: :request do
         produces 'application/json'
         security [ bearerAuth: [] ]
 
-        response '200', 'applied; the editor is emailed' do
+        response '200', 'applied; the editor is emailed and subscribers learn about public changes' do
           schema revision_response
 
           context 'with a pending revision' do
@@ -126,11 +126,17 @@ RSpec.describe 'Moderation: event revisions', type: :request do
               .and have_enqueued_job(ActivityLogJob)
           end
 
+          it 'notifies subscribers and ticket holders about a new location (FR-SUB-3)' do
+            expect { send_documented_request }
+              .to have_enqueued_job(Subscriptions::NotifyJob)
+              .with('event_changed', event.id, hash_including('revision_id' => revision.id))
+          end
+
           context 'when only texts change' do
             let(:revision) { submit_revision(translations: [ { locale: 'uk', title: 'Нова назва' } ]) }
 
-            it 'applies the new title' do
-              send_documented_request
+            it 'applies the new title without notifying subscribers' do
+              expect { send_documented_request }.not_to have_enqueued_job(Subscriptions::NotifyJob)
               expect(event.reload.title).to eq('Нова назва')
             end
           end
@@ -234,10 +240,11 @@ RSpec.describe 'Moderation: event revisions', type: :request do
             end
           end
 
-          it 'emails the editor with the reason' do
+          it 'emails the editor with the reason and does not notify subscribers' do
             expect { send_documented_request }
               .to have_enqueued_mail(ModerationMailer, :revision_decision)
               .with(revision, 'rejected', 'The new address is incomplete')
+            expect(Subscriptions::NotifyJob).not_to have_been_enqueued
           end
         end
 
