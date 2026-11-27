@@ -39,7 +39,7 @@ Rails.application.routes.draw do
         post 'reset-password', to: 'reset_passwords#create'
       end
 
-      resources :events, only: [ :index, :show ]
+      resources :events, only: %i[index show]
 
       resources :categories, only: [ :index ]
 
@@ -62,8 +62,6 @@ Rails.application.routes.draw do
             post :unblock
           end
         end
-
-
 
         resources :events, only: :index do
           member do
@@ -93,12 +91,14 @@ Rails.application.routes.draw do
           end
         end
 
+        resources :questions, only: :index
         resources :logs, only: :index
       end
 
       # Organization events (US-5.1)
-      resources :organizations, only: [ :create, :update ] do
+      resources :organizations, only: %i[create update] do
         resources :reviews, only: %i[index create], controller: 'organization_reviews'
+        resources :questions, only: %i[index create]
         resources :events, only: %i[index create update destroy], module: :organizations do
           member { post :submit }
           resource :revision, only: :destroy
@@ -106,6 +106,7 @@ Rails.application.routes.draw do
             collection { patch :order }
           end
           resources :tickets, only: :index, module: :events
+          resources :check_ins, only: :create, module: :events
           resource :check_in_statistics, only: :show, module: :events
         end
       end
@@ -113,6 +114,14 @@ Rails.application.routes.draw do
       resources :events, only: [] do
         resources :orders, only: [ :create ]
         resources :reviews, only: %i[index create], controller: 'event_reviews'
+        resources :questions, only: %i[index create]
+      end
+
+      resources :questions, only: %i[index create destroy] do
+        member do
+          patch :hide
+        end
+        resources :answers, only: [ :create ]
       end
 
       resources :reviews, only: %i[update destroy], controller: 'event_reviews'
