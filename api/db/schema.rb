@@ -222,7 +222,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_26_151616) do
     t.check_constraint "end_at > start_at", name: "chk_events_end_after_start"
     t.check_constraint "location_type IS NULL OR (location_type::text = ANY (ARRAY['offline'::character varying::text, 'online'::character varying::text]))", name: "chk_events_location_type"
     t.check_constraint "reviews_count >= 0", name: "chk_events_reviews_count"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'under_review'::character varying, 'published'::character varying, 'rejected'::character varying, 'cancelled'::character varying, 'cancelled_by_organizer'::character varying]::text[])", name: "chk_events_status"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'under_review'::character varying::text, 'published'::character varying::text, 'rejected'::character varying::text, 'cancelled'::character varying::text, 'cancelled_by_organizer'::character varying::text])", name: "chk_events_status"
   end
 
   create_table "moderation_logs", force: :cascade do |t|

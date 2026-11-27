@@ -1,0 +1,21 @@
+uk:
+  event_mailer:
+    greeting: "Вітаємо, %{name}!"
+    reason_label: "Причина:"
+    signature: "Команда Come2Kids"
+    event_cancelled:
+      subject: "Подію «%{title}» скасовано"
+      heading: "Подію «%{title}» скасовано."
+      body: "Організатор %{organization} скасував подію, заплановану на %{date}. Місце: %{place}."
+    event_changed:
+      subject: "Подію «%{title}» змінено"
+      heading: "Подію «%{title}» змінено."
+      body: "Організатор %{organization} оновив подію (%{date}, %{place}). %{changes}"
+    event_published:
+      subject: "Нова подія від %{organization}: «%{title}»"
+      heading: "Організація %{organization} опублікувала нову подію."
+      body: "«%{title}» відбудеться %{date}. Місце: %{place}."
+    event_reminder:
+      subject: "Нагадування: «%{title}» вже завтра"
+      heading: "Не забудьте про подію «%{title}»."
+      body: "Початок %{date}. Місце: %{place}. Організатор: %{organization}."

@@ -34,6 +34,12 @@ class ModerationMailer < ApplicationMailer
     end
   end
 
+  def revision_decision(revision, decision, reason = nil)
+    event = revision.event
+    recipient = revision.submitted_by
+    deliver_notification(recipient, "revision_#{decision}", reason) { { title: event.title || "##{event.id}" } }
+  end
+
   private
 
   def pending_suffix(target)

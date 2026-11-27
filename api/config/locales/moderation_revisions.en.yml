@@ -1,0 +1,10 @@
+en:
+  moderation_mailer:
+    revision_approved:
+      subject: "Changes to «%{title}» approved"
+      heading: "Changes to «%{title}» approved."
+      body: "The updated version of the event is published. Thank you for the update."
+    revision_rejected:
+      subject: "Changes to «%{title}» not approved"
+      heading: "Changes to «%{title}» not approved."
+      body: "The event stays in its previous version. Fix the remarks and submit the changes again."
