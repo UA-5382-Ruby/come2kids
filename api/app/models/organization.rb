@@ -70,6 +70,11 @@ class Organization < ApplicationRecord
     (translations[locale.to_s] || translations['uk'])&.name || slug
   end
 
+  # US-3.4: Published events count for public profile
+  def published_events_count
+    events.where(status: 'published').count
+  end
+
   private
 
   def assign_designated_owner

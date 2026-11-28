@@ -39,6 +39,10 @@ Rails.application.routes.draw do
         post 'reset-password', to: 'reset_passwords#create'
       end
 
+      namespace :public do
+        resources :organizations, only: %i[index show]
+      end
+
       resources :events, only: %i[index show]
 
       resources :categories, only: [ :index ]
