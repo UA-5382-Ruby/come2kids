@@ -51,7 +51,7 @@ module Api
 
           scope.joins(:organization_translations)
                .where(
-                 "organization_translations.locale = ? AND organization_translations.name ILIKE ?",
+                 'organization_translations.locale = ? AND organization_translations.name ILIKE ?',
                  locale, search_term
                )
                .or(
@@ -65,7 +65,7 @@ module Api
         end
 
         def limit_param
-          [(params[:limit] || 20).to_i, 100].min
+          [ (params[:limit] || 20).to_i, 100 ].min
         end
 
         def offset_param

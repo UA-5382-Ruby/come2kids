@@ -2,6 +2,7 @@
 
 require 'swagger_helper'
 
+# rubocop:disable RSpec/RepeatedExample
 RSpec.describe 'Api::V1::Public::Organizations', type: :request do
   # rubocop:disable RSpec/MultipleMemoizedHelpers
   let(:approved_org) do
@@ -59,8 +60,8 @@ RSpec.describe 'Api::V1::Public::Organizations', type: :request do
                 name: { type: :string },
                 description: { type: :string },
                 contact_email: { type: :string },
-                city: { type: [:string, :null] },
-                average_rating: { type: [:number, :null] },
+                city: { type: [ :string, :null ] },
+                average_rating: { type: [ :number, :null ] },
                 reviews_count: { type: :integer },
                 published_events_count: { type: :integer }
               }
@@ -94,7 +95,9 @@ RSpec.describe 'Api::V1::Public::Organizations', type: :request do
       end
 
       response '200', 'with Accept-Language: uk returns Ukrainian translations' do
+        # rubocop:disable RSpec/VariableName
         let(:'Accept-Language') { 'uk' }
+        # rubocop:enable RSpec/VariableName
 
         run_test! do |response|
           json = JSON.parse(response.body)
@@ -103,7 +106,9 @@ RSpec.describe 'Api::V1::Public::Organizations', type: :request do
       end
 
       response '200', 'with Accept-Language: en returns English translations' do
+        # rubocop:disable RSpec/VariableName
         let(:'Accept-Language') { 'en' }
+        # rubocop:enable RSpec/VariableName
 
         run_test! do |response|
           json = JSON.parse(response.body)
@@ -135,11 +140,11 @@ RSpec.describe 'Api::V1::Public::Organizations', type: :request do
               name: { type: :string },
               description: { type: :string },
               contact_email: { type: :string },
-              phone: { type: [:string, :null] },
-              website: { type: [:string, :null] },
-              address: { type: [:string, :null] },
-              city: { type: [:string, :null] },
-              average_rating: { type: [:number, :null] },
+              phone: { type: [ :string, :null ] },
+              website: { type: [ :string, :null ] },
+              address: { type: [ :string, :null ] },
+              city: { type: [ :string, :null ] },
+              average_rating: { type: [ :number, :null ] },
               reviews_count: { type: :integer },
               published_events_count: { type: :integer }
             }
@@ -185,3 +190,4 @@ RSpec.describe 'Api::V1::Public::Organizations', type: :request do
   end
   # rubocop:enable RSpec/MultipleMemoizedHelpers
 end
+# rubocop:enable RSpec/RepeatedExample
